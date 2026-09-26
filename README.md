@@ -23,6 +23,21 @@ En production, servir `dist/` derrière un reverse proxy qui relaie `/api` vers 
 ou définir `VITE_API_URL` avec l'URL publique de l'API (le backend doit alors l'autoriser
 dans `CORS_ORIGIN`).
 
+## Déploiement sur Render
+
+Le fichier `render.yaml` décrit un **site statique** : `npm ci && npm run build`, publication de `dist/`,
+réécriture de toutes les URL vers `index.html` (React Router) et en-têtes de cache et de sécurité.
+
+1. Dans Render : **New > Blueprint**, choisir le dépôt `jeune-dev/Yobante-colis-admin`, branche `main`.
+2. Renseigner `VITE_API_URL` avec l'URL publique de l'API **préfixe `/api/v1` compris**
+   (valeur provisoire : `https://yobnate-colis-back.onrender.com/api/v1`).
+   Vite l'intègre **au build** : après l'avoir modifiée, relancer un déploiement.
+3. Côté backend, ajouter l'URL du site Render (par ex. `https://yobante-colis-admin.onrender.com`)
+   à `CORS_ORIGIN`, sinon le navigateur bloque les appels.
+
+Chaque push sur `main` redéploie automatiquement. Le jeton de rafraîchissement est envoyé dans le
+corps des requêtes : le cookie `sameSite=strict` du backend n'est pas nécessaire entre deux domaines.
+
 ## Écrans
 
 Couverture complète du contrat d'API du back-office (`CONTRAT-API-ADMIN.md`, 207 routes).

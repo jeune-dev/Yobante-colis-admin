@@ -1,0 +1,36 @@
+# Blueprint Render : site statique (build Vite servi par le CDN de Render).
+# Dans Render : New > Blueprint > choisir ce dépôt.
+services:
+  - type: web
+    runtime: static
+    name: yobante-colis-admin
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      # URL publique de l'API, préfixe /api/v1 compris. Lue AU BUILD par Vite :
+      # après l'avoir changée, relancer un déploiement (« Save, rebuild, and deploy »).
+      - key: VITE_API_URL
+        value: https://yobnate-colis-back.onrender.com/api/v1
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      # Application monopage : toute URL inconnue renvoie index.html (React Router)
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Les fichiers générés portent un hash dans leur nom : cache long sans risque
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
