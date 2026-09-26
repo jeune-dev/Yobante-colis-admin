@@ -8,7 +8,7 @@ import { Card, Empty, ErrorBox, KV, Loader, StatutBadge, toast } from '@/compone
 import {
   ETATS_MARCHANDISE, INCOTERMS, PAYS, STATUTS_DOUANE, TYPES_CONTENU, TYPES_DOCUMENT_DOUANE, UNITES_DOUANE, libelle,
 } from '@/lib/labels';
-import { dateHeure, montant, ouvrirDocument, poids } from '@/lib/format';
+import { dateHeure, montant, ouvrirDocument, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import type { ArticleDouane, Declaration } from './DouanePage';
 
@@ -108,7 +108,7 @@ export default function DouaneDetailPage() {
                 {d.documents.map((doc, i) => (
                   <li key={i} style={{ padding: '0.3rem 0' }}>
                     <Icon name="file-text" size={14} />{' '}
-                    <a href={doc.url} target="_blank" rel="noreferrer">{doc.libelle || libelle(TYPES_DOCUMENT_DOUANE, doc.type)}</a>
+                    <a href={urlSure(doc.url)} target="_blank" rel="noreferrer">{doc.libelle || libelle(TYPES_DOCUMENT_DOUANE, doc.type)}</a>
                     <span className="muted small"> · {libelle(TYPES_DOCUMENT_DOUANE, doc.type)}</span>
                   </li>
                 ))}

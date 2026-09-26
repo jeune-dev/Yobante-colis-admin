@@ -40,7 +40,7 @@ export default function ColisListPage() {
   const [lot, setLot] = useState(false);
   const [numero, setNumero] = useState('');
 
-  const { filtres, page, set, setPage } = useFiltres({
+  const { filtres, page, set, modifier, setPage } = useFiltres({
     reference: '', statut: '', categorie: '', paysDepart: '', typeContenu: '', modeDepot: '',
     expediteur: '', destinataire: '', produit: '', dateDebut: '', dateFin: '',
     aEtudier: '', etudeEnRetard: '', enRetard: '', enSouffrance: '', sansRotation: '',
@@ -64,7 +64,7 @@ export default function ColisListPage() {
     enabled: lot,
   });
 
-  const choisirVue = (v: string) => CLES_VUES.forEach((k) => set(k, k === v ? 'true' : ''));
+  const choisirVue = (v: string) => modifier(Object.fromEntries(CLES_VUES.map((k) => [k, k === v ? 'true' : ''])));
 
   const exporter = async () => {
     try {

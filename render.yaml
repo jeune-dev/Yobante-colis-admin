@@ -34,3 +34,18 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      # Le reste de la CSP est dans index.html (générée au build, voir vite.config.ts) ;
+      # frame-ancestors n'est pris en compte qu'en en-tête HTTP.
+      - path: /*
+        name: Content-Security-Policy
+        value: frame-ancestors 'none'
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      # index.html n'est jamais mis en cache : un nouveau déploiement est vu tout de suite
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache

@@ -6,7 +6,7 @@ import type { Client, Colis, Liste } from '@/api/types';
 import Icon from '@/components/Icon';
 import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Stat, StatutBadge } from '@/components/ui';
 import { CATEGORIES_COURT, PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
-import { date, dateHeure, montant, nomComplet } from '@/lib/format';
+import { date, dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
 
 type ClientDetail = Client & { stats: { nbColisEnvoyes: number; nbColisLivres: number; encours: number } };
@@ -94,7 +94,7 @@ export default function ClientDetailPage() {
                 <KV label="Raison sociale">{u.raisonSociale}</KV>
                 <KV label="NINEA / SIRET">{u.numeroIdentificationFiscale || '—'}</KV>
                 <KV label="Justificatif pro">
-                  {u.justificatifProUrl ? <a href={u.justificatifProUrl} target="_blank" rel="noreferrer">Voir le document</a> : '—'}
+                  {urlSure(u.justificatifProUrl) ? <a href={urlSure(u.justificatifProUrl)} target="_blank" rel="noreferrer">Voir le document</a> : '—'}
                   {u.justificatifProValide && <> <Badge ton="vert">validé</Badge></>}
                 </KV>
               </>

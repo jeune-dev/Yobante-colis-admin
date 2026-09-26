@@ -16,7 +16,7 @@ import { useAction, useFiltres } from '@/lib/hooks';
 
 export default function FacturesPage() {
   const navigate = useNavigate();
-  const { filtres, page, set, setPage } = useFiltres({ reference: '', statut: '', devise: '', type: '', impayees: '', echues: '', dateDebut: '', dateFin: '' });
+  const { filtres, page, set, modifier, setPage } = useFiltres({ reference: '', statut: '', devise: '', type: '', impayees: '', echues: '', dateDebut: '', dateFin: '' });
   const stats = useQuery({
     queryKey: ['factures', 'statistiques', filtres],
     queryFn: () => api.get<{ statistiques: StatsFactures }>('/admin/factures/statistiques', filtres).then((r) => r.statistiques),
@@ -58,10 +58,7 @@ export default function FacturesPage() {
         <Chips
           options={[{ value: '', label: 'Toutes' }, { value: 'impayees', label: 'Impayées' }, { value: 'echues', label: 'Échues' }]}
           value={vue}
-          onChange={(v) => {
-            set('impayees', v === 'impayees' ? 'true' : '');
-            set('echues', v === 'echues' ? 'true' : '');
-          }}
+          onChange={(v) => modifier({ impayees: v === 'impayees' ? 'true' : '', echues: v === 'echues' ? 'true' : '' })}
         />
         <select className="select" value={filtres.statut} onChange={(e) => set('statut', e.target.value)}>
           <option value="">Tous les statuts</option>

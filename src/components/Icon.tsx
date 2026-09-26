@@ -79,8 +79,6 @@ const PATHS: Record<string, ReactNode> = {
   send: <><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></>,
 };
 
-// Liste des noms disponibles (utile pour les sélecteurs d'icône)
-export const ICON_NAMES = Object.keys(PATHS);
 
 interface IconProps {
   name: string;

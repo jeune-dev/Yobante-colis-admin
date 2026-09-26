@@ -25,10 +25,26 @@ export const nomComplet = (p?: { prenom?: string; nom?: string } | null) =>
 export const initiales = (p?: { prenom?: string; nom?: string } | null) =>
   `${p?.prenom?.[0] ?? ''}${p?.nom?.[0] ?? ''}`.toUpperCase() || 'A';
 
+/**
+ * Politique appliquée aux documents du backend : ils ne contiennent que du HTML et du
+ * CSS en ligne, donc aucun script n'est autorisé. Une URL blob s'exécute avec l'origine
+ * du back-office (accès à la session) : si une donnée mal échappée côté serveur glissait
+ * un script dans un document, il serait bloqué ici.
+ */
+export const CSP_DOCUMENT =
+  "default-src 'none'; style-src 'unsafe-inline'; img-src data: blob: https:; font-src data: https:; base-uri 'none'; form-action 'none'";
+
+export const confinerHtml = (html: string) => {
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${CSP_DOCUMENT}">`;
+  // La balise doit précéder tout contenu actif pour s'appliquer à l'ensemble du document
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (h) => `${h}${meta}`) : `${meta}${html}`;
+};
+
 /** Ouvre un document HTML du backend (étiquettes, bordereau, manifeste…) dans un onglet. */
 export const ouvrirDocument = (html: string) => {
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  window.open(url, '_blank');
+  const url = URL.createObjectURL(new Blob([confinerHtml(html)], { type: 'text/html' }));
+  // noopener : le document ouvert n'a pas de référence vers la fenêtre du back-office
+  window.open(url, '_blank', 'noopener');
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };
 
@@ -38,5 +54,17 @@ export const telecharger = (blob: Blob, nom: string) => {
   a.href = url;
   a.download = nom;
   a.click();
-  URL.revokeObjectURL(url);
+  // Révocation différée : certains navigateurs lisent l'URL après le clic
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+};
+
+/** N'accepte que les liens http(s) venant de l'API (refuse `javascript:`, `data:`…). */
+export const urlSure = (url?: string | null) => {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : undefined;
+  } catch {
+    return undefined;
+  }
 };

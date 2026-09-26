@@ -87,23 +87,31 @@ function Barres({ lignes }: { lignes: { label: string; valeur: number; suffixe?:
   );
 }
 
+/**
+ * Indicateur du tableau de bord : `data.<cle>` de la route, filtré sur la période si fournie.
+ * La période fait partie de la clé de cache : changer de période relance la requête.
+ */
+function useIndicateur<T>(cle: string, url: string, periode?: { dateDebut: string; dateFin: string }) {
+  return useQuery({
+    queryKey: ['dashboard', url, periode?.dateDebut ?? '', periode?.dateFin ?? ''],
+    queryFn: () => api.get<Record<string, T>>(url, periode).then((r) => r[cle]),
+  });
+}
+
 export default function AnalysesPage() {
   const [jours, setJours] = useState('30');
   const fin = new Date();
   const debut = new Date(fin.getTime() - Number(jours) * 86_400_000);
   const periode = { dateDebut: debut.toISOString().slice(0, 10), dateFin: fin.toISOString().slice(0, 10) };
 
-  const get = <T,>(cle: string, url: string, avecPeriode = true) =>
-    useQuery({ queryKey: ['dashboard', cle, avecPeriode ? jours : ''], queryFn: () => api.get<Record<string, T>>(url, avecPeriode ? periode : undefined).then((r) => r[cle]) });
-
-  const kpis = get<Kpis>('kpis', '/admin/dashboard/kpis');
-  const conversion = get<Conversion>('conversion', '/admin/dashboard/conversion');
-  const marketing = get<Marketing>('marketing', '/admin/dashboard/marketing');
-  const evaluations = get<Evaluations>('evaluations', '/admin/dashboard/evaluations');
-  const stock = get<Stock>('stock', '/admin/dashboard/stock', false);
-  const pays = get<Pays[]>('pays', '/admin/dashboard/par-pays', false);
-  const actifs = get<{ client: Personne & { typeCompte?: string }; nbColis: number }[]>('utilisateurs', '/admin/dashboard/utilisateurs-actifs', false);
-  const departs = get<{ ville: { nom: string; pays: string } | null; total: number }[]>('villes', '/admin/dashboard/villes-depart', false);
+  const kpis = useIndicateur<Kpis>('kpis', '/admin/dashboard/kpis', periode);
+  const conversion = useIndicateur<Conversion>('conversion', '/admin/dashboard/conversion', periode);
+  const marketing = useIndicateur<Marketing>('marketing', '/admin/dashboard/marketing', periode);
+  const evaluations = useIndicateur<Evaluations>('evaluations', '/admin/dashboard/evaluations', periode);
+  const stock = useIndicateur<Stock>('stock', '/admin/dashboard/stock');
+  const pays = useIndicateur<Pays[]>('pays', '/admin/dashboard/par-pays');
+  const actifs = useIndicateur<{ client: Personne & { typeCompte?: string }; nbColis: number }[]>('utilisateurs', '/admin/dashboard/utilisateurs-actifs');
+  const departs = useIndicateur<{ ville: { nom: string; pays: string } | null; total: number }[]>('villes', '/admin/dashboard/villes-depart');
   const arrivees = useQuery({
     queryKey: ['dashboard', 'villes-arrivee'],
     queryFn: () => api.get<{ villes: { ville: { nom: string } | null; total: number }[] }>('/admin/dashboard/villes-arrivee').then((r) => r.villes),

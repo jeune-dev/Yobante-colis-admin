@@ -6,7 +6,8 @@ import type { Liste } from '@/api/types';
 import Icon from './Icon';
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
-import { routeDepuisLien, type Notification } from '@/pages/compte/NotificationsPage';
+import { routeDepuisLien } from '@/lib/liens';
+import type { Notification } from '@/pages/compte/NotificationsPage';
 
 /** Cloche du bandeau : compteur de non-lues (rafraîchi chaque minute) et aperçu des dernières. */
 export default function NotificationsBell() {

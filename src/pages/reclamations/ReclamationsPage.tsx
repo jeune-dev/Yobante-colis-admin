@@ -24,7 +24,7 @@ const CLES = ['ouvertes', 'nonAssignees', 'enRetard'] as const;
 
 export default function ReclamationsPage() {
   const navigate = useNavigate();
-  const { filtres, page, set, setPage } = useFiltres({
+  const { filtres, page, set, modifier, setPage } = useFiltres({
     reference: '', statut: '', type: '', priorite: '', ouvertes: 'true', nonAssignees: '', enRetard: '',
   });
   const vue = CLES.find((k) => filtres[k] === 'true') ?? '';
@@ -57,7 +57,7 @@ export default function ReclamationsPage() {
 
       <div className="toolbar">
         <SearchInput value={filtres.reference} onChange={(v) => set('reference', v)} placeholder="Référence…" />
-        <Chips options={VUES} value={vue} onChange={(v) => CLES.forEach((k) => set(k, k === v ? 'true' : ''))} />
+        <Chips options={VUES} value={vue} onChange={(v) => modifier(Object.fromEntries(CLES.map((k) => [k, k === v ? 'true' : ''])))} />
         <select className="select" value={filtres.statut} onChange={(e) => set('statut', e.target.value)}>
           <option value="">Tous les statuts</option>
           {Object.entries(STATUTS_RECLAMATION).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}

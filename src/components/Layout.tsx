@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import Icon from './Icon';
 import NotificationsBell from './NotificationsBell';
 import { Loader } from './ui';
+import ErrorBoundary from './ErrorBoundary';
 import logo from '@/logo.png';
 import { useAuth } from '@/auth/store';
 import { api } from '@/api/client';
@@ -145,9 +146,11 @@ export default function Layout() {
         </header>
         <div className="content">
           {/* La barre latérale reste affichée pendant le chargement d'une page */}
-          <Suspense fallback={<Loader />}>
-            <Outlet />
-          </Suspense>
+          <ErrorBoundary cle={pathname}>
+            <Suspense fallback={<Loader />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import { useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
 import { Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/components/ui';
 import { PRIORITES, STATUTS_RECLAMATION, TRANSITIONS_RECLAMATION, TYPES_RECLAMATION, libelle } from '@/lib/labels';
-import { dateHeure, montant, nomComplet } from '@/lib/format';
+import { dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
 
 export default function ReclamationDetailPage() {
@@ -98,7 +98,7 @@ export default function ReclamationDetailPage() {
                     {!!m.piecesJointes?.length && (
                       <div className="small" style={{ marginTop: 4 }}>
                         {m.piecesJointes.map((pj, i) => {
-                          const url = typeof pj === 'string' ? pj : (pj as { url?: string }).url;
+                          const url = urlSure(typeof pj === 'string' ? pj : (pj as { url?: string }).url);
                           return url ? <a key={i} href={url} target="_blank" rel="noreferrer" style={{ marginRight: 8 }}>Pièce {i + 1}</a> : null;
                         })}
                       </div>

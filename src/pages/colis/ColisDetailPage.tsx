@@ -8,7 +8,7 @@ import { Badge, Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } f
 import {
   CATEGORIES, MODES_DEPOT, MODES_LIVRAISON, PAYS, STATUTS_COLIS, STATUTS_FACTURE, TYPES_CONTENU, libelle,
 } from '@/lib/labels';
-import { date, dateHeure, montant, nomComplet, ouvrirDocument, poids } from '@/lib/format';
+import { date, dateHeure, montant, nomComplet, ouvrirDocument, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
 import type { PointRef, Personne } from '@/api/types';
@@ -338,7 +338,7 @@ export default function ColisDetailPage() {
 
 /** Les photos sont stockées par le backend sous forme d'URL ou d'objet Cloudinary. */
 const urlPhoto = (p: unknown): string | undefined =>
-  typeof p === 'string' ? p : (p as { url?: string; secure_url?: string })?.url ?? (p as { secure_url?: string })?.secure_url;
+  urlSure(typeof p === 'string' ? p : (p as { url?: string; secure_url?: string })?.url ?? (p as { secure_url?: string })?.secure_url);
 
 /* ── Dialogues d'action ──────────────────────────────────────────────────── */
 

@@ -48,7 +48,7 @@ type Dialogue = { type: 'detail' | 'planifier' | 'cloturer' | 'annuler'; demande
 export default function EnlevementsPage() {
   const [vue, setVue] = useState<'liste' | 'tournee'>('liste');
   const [dialogue, setDialogue] = useState<Dialogue>(null);
-  const { filtres, page, set, setPage } = useFiltres({ statut: '', pays: '', aTraiter: '', sansCoursier: '', dateDebut: '', dateFin: '' });
+  const { filtres, page, set, modifier, setPage } = useFiltres({ statut: '', pays: '', aTraiter: '', sansCoursier: '', dateDebut: '', dateFin: '' });
 
   const q = useQuery({
     queryKey: ['enlevements', filtres, page],
@@ -89,7 +89,7 @@ export default function EnlevementsPage() {
             <Chips
               options={[{ value: '', label: 'Toutes' }, { value: 'aTraiter', label: 'À traiter' }, { value: 'sansCoursier', label: 'Sans coursier' }]}
               value={filtres.aTraiter ? 'aTraiter' : filtres.sansCoursier ? 'sansCoursier' : ''}
-              onChange={(v) => { set('aTraiter', v === 'aTraiter' ? 'true' : ''); set('sansCoursier', v === 'sansCoursier' ? 'true' : ''); }}
+              onChange={(v) => modifier({ aTraiter: v === 'aTraiter' ? 'true' : '', sansCoursier: v === 'sansCoursier' ? 'true' : '' })}
             />
             <select className="select" value={filtres.statut} onChange={(e) => set('statut', e.target.value)}>
               <option value="">Tous les statuts</option>

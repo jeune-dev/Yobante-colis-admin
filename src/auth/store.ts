@@ -18,6 +18,8 @@ interface AuthState {
   clear: () => void;
 }
 
+export const CLE_SESSION = 'yobante-colis-admin-auth';
+
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
@@ -32,9 +34,18 @@ export const useAuth = create<AuthState>()(
         })),
       clear: () => set({ accessToken: null, refreshToken: null, utilisateur: null }),
     }),
-    { name: 'yobante-colis-admin-auth' }
+    { name: CLE_SESSION }
   )
 );
+
+// Synchronisation entre onglets : le refresh token est à usage unique. Sans cela, un
+// onglet garderait en mémoire un jeton déjà consommé par un autre et serait déconnecté
+// à son prochain rafraîchissement ; une déconnexion est aussi répercutée partout.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === CLE_SESSION) void useAuth.persist.rehydrate();
+  });
+}
 
 export const ROLES_ADMIN = ['admin', 'super_admin'];
 export const estAdmin = (u: Utilisateur | null) => ROLES_ADMIN.includes(u?.role ?? '');

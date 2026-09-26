@@ -7,6 +7,7 @@ import Icon from '@/components/Icon';
 import { Badge, Card, Empty, ErrorBox, Loader, Pagination, toast } from '@/components/ui';
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
+import { routeDepuisLien } from '@/lib/liens';
 
 export interface Notification {
   id: string;
@@ -18,20 +19,6 @@ export interface Notification {
   lienCible?: string;
   createdAt: string;
 }
-
-/**
- * Les liens des notifications visent les routes de l'API (« /admin/colis/:id ») :
- * on les ramène aux écrans du back-office, qui portent les mêmes chemins sans « /admin ».
- */
-export const routeDepuisLien = (lien?: string) => {
-  if (!lien) return null;
-  const chemin = lien.replace(/^https?:\/\/[^/]+/, '').replace(/^\/api\/v1/, '').replace(/^\/admin/, '');
-  const correspondances: [RegExp, string][] = [
-    [/^\/rotations\//, '/conteneurs/'],
-    [/^\/users\//, '/clients/'],
-  ];
-  return correspondances.reduce((c, [re, dest]) => c.replace(re, dest), chemin) || null;
-};
 
 export default function NotificationsPage() {
   const navigate = useNavigate();

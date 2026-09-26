@@ -44,12 +44,21 @@ http.interceptors.response.use(
 
     if (error.response?.status === 401 && original && !original._retry && !estAuth) {
       original._retry = true;
+      const jetonUtilise = useAuth.getState().accessToken;
       try {
         refreshEnCours ??= rafraichir().finally(() => (refreshEnCours = null));
         const token = await refreshEnCours;
         original.headers = { ...original.headers, Authorization: `Bearer ${token}` };
         return http(original);
       } catch {
+        // Un autre onglet a peut-être rafraîchi la session au même moment (le refresh
+        // token ne sert qu'une fois) : on relit la session avant de déconnecter.
+        await useAuth.persist.rehydrate();
+        const jetonActuel = useAuth.getState().accessToken;
+        if (jetonActuel && jetonActuel !== jetonUtilise) {
+          original.headers = { ...original.headers, Authorization: `Bearer ${jetonActuel}` };
+          return http(original);
+        }
         useAuth.getState().clear();
         window.location.assign('/login');
       }
