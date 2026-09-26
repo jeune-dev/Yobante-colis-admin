@@ -39,6 +39,12 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       include: ['src/**/*.test.{ts,tsx}'],
+      // Un seul processus réutilisé : sous Windows, démarrer plusieurs workers jsdom
+      // dépasse le délai de lancement fixé par Vitest (60 s). La suite reste rapide.
+      pool: 'forks',
+      maxWorkers: 1,
+      isolate: false,
+      restoreMocks: true,
     },
   };
 });

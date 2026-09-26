@@ -1,0 +1,25 @@
+# Vérifie chaque push et chaque pull request : types, lint, tests et build.
+# Render déploie `main` de son côté ; un échec ici signale le problème avant la mise en ligne.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      # Aucune vulnérabilité connue de niveau élevé dans les dépendances de production
+      - run: npm audit --omit=dev --audit-level=high

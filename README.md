@@ -23,6 +23,27 @@ En production, servir `dist/` derrière un reverse proxy qui relaie `/api` vers 
 ou définir `VITE_API_URL` avec l'URL publique de l'API (le backend doit alors l'autoriser
 dans `CORS_ORIGIN`).
 
+## Qualité et sécurité
+
+| Commande | Rôle |
+|---|---|
+| `npm run type-check` | TypeScript strict |
+| `npm run lint` | ESLint (règles des hooks React, pas de `any`) |
+| `npm test` | Vitest + Testing Library (filtres d'URL, liens, CSP, formulaires, ErrorBoundary) |
+| `npm run verify` | Les trois, puis le build de production |
+
+La même vérification tourne sur GitHub Actions à chaque push (`.github/workflows/ci.yml`).
+
+Mesures de sécurité côté navigateur :
+- **CSP** générée au build dans `index.html` (`src/lib/csp.ts`) : scripts limités au site, appels réseau limités
+  au site et à l'origine de `VITE_API_URL` ; `frame-ancestors`, HSTS et `Permissions-Policy` envoyés par Render.
+- **Documents imprimables** (étiquettes, factures, manifestes) ouverts avec leur propre CSP sans script
+  (`confinerHtml`) : ils partagent l'origine du back-office.
+- **Liens venant de l'API** filtrés (`urlSure` : http/https seulement ; `routeDepuisLien` : chemins internes seulement).
+- **Session** synchronisée entre onglets (le refresh token est à usage unique).
+
+Les droits réels sont vérifiés par le backend : masquer un bouton ici n'est qu'un confort d'interface.
+
 ## Déploiement sur Render
 
 Le fichier `render.yaml` décrit un **site statique** : `npm ci && npm run build`, publication de `dist/`,
