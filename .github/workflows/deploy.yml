@@ -1,0 +1,104 @@
+name: Deploy Yobante Colis Admin
+
+# Déploiement uniquement après une CI réussie sur main (types, lint, tests,
+# build, audit des dépendances). `workflow_dispatch` ajoute un bouton
+# « Run workflow » pour rejouer un déploiement dont l'échec ne vient pas du
+# code : VPS injoignable, secret corrigé après coup.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Deux pushes rapprochés ne doivent pas déployer en parallèle : le second
+# annule le premier plutôt que d'écrire par-dessus lui pendant le transfert.
+concurrency:
+  group: deploy-admin-colis
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build et déploiement sur le VPS
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # Sur un événement `workflow_run`, actions/checkout prend par défaut la
+      # tête de la branche par défaut, pas le commit qui a déclenché la CI.
+      # On épingle donc le SHA validé : on déploie exactement ce qui a été testé.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # VITE_API_URL vide (secret absent) = mode proxy : l'application appelle
+      # /api sur sa propre origine et nginx relaie vers le backend colis.
+      # Aucun CORS, et le cookie httpOnly du refresh token circule normalement.
+      # Définir le secret bascule en appels directs — la CSP suit
+      # automatiquement (src/lib/csp.ts injecte l'origine dans connect-src).
+      - name: Écrire .env
+        run: echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env
+
+      - name: Build
+        run: npm run build
+
+      # Garde-fou : un build vide ne doit jamais écraser le site en production.
+      - name: Vérifier le build
+        run: test -f dist/index.html && test -d dist/assets
+
+      # Le dossier cible n'existe pas au tout premier déploiement.
+      - name: Préparer le dossier cible
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /var/www/yobante-admin-colis
+
+      - name: Envoi de dist/ vers le VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist/*"
+          target: "/var/www/yobante-admin-colis"
+          strip_components: 1
+          overwrite: true
+
+      # Les fichiers arrivent sous l'utilisateur SSH ; nginx (www-data) doit
+      # pouvoir les lire.
+      - name: Corriger les droits
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            chown -R www-data:www-data /var/www/yobante-admin-colis
+            find /var/www/yobante-admin-colis -type d -exec chmod 755 {} \;
+            find /var/www/yobante-admin-colis -type f -exec chmod 644 {} \;
+
+      - name: Vérifier la mise en ligne
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            curl -f -I https://admin.yobanterek.com || exit 1
