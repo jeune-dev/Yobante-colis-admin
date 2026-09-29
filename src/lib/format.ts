@@ -8,6 +8,12 @@ export const montant = (valeur?: number | string | null, devise = 'XOF') => {
   return `${n.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec })} ${SYMBOLES[devise] ?? devise}`;
 };
 
+/** Date du jour « AAAA-MM-JJ » en heure locale (toISOString donnerait la date UTC). */
+export const aujourdhui = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export const date = (valeur?: string | null) =>
   valeur ? new Date(valeur).toLocaleDateString('fr-FR') : '—';
 
@@ -36,8 +42,11 @@ export const CSP_DOCUMENT =
 
 export const confinerHtml = (html: string) => {
   const meta = `<meta http-equiv="Content-Security-Policy" content="${CSP_DOCUMENT}">`;
-  // La balise doit précéder tout contenu actif pour s'appliquer à l'ensemble du document
-  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (h) => `${h}${meta}`) : `${meta}${html}`;
+  // La balise doit précéder TOUT contenu : placée juste après le doctype (et non après
+  // <head>), elle s'applique même à un script qui aurait été glissé avant <head>. Le
+  // parseur HTML ouvre alors <head> implicitement et fusionne les balises suivantes.
+  const doctype = /^\s*<!doctype[^>]*>/i.exec(html)?.[0] ?? '';
+  return `${doctype}${meta}${html.slice(doctype.length)}`;
 };
 
 /** Ouvre un document HTML du backend (étiquettes, bordereau, manifeste…) dans un onglet. */

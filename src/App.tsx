@@ -1,10 +1,11 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Loader } from './components/ui';
-import { useAuth } from './auth/store';
+import { estAdmin, useAuth } from './auth/store';
 import LoginPage from './auth/LoginPage';
 import MotDePasseOubliePage from './auth/MotDePasseOubliePage';
 import Layout from './components/Layout';
+import { D, R, nouvelleAdresse } from '@/lib/routes';
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const AnalysesPage = lazy(() => import('./pages/AnalysesPage'));
 const ColisListPage = lazy(() => import('./pages/colis/ColisListPage'));
@@ -47,17 +48,43 @@ const JournalPage = lazy(() => import('./pages/systeme/JournalPage'));
 const ProfilPage = lazy(() => import('./pages/compte/ProfilPage'));
 const NotificationsPage = lazy(() => import('./pages/compte/NotificationsPage'));
 
+/**
+ * Accès au back-office : session présente ET rôle d'administration. Le backend reste
+ * seul juge (chaque route /admin vérifie le rôle) ; ceci évite d'afficher l'interface
+ * à une session incohérente. La page demandée est mémorisée pour y revenir après connexion.
+ */
 function Protege({ children }: { children: React.ReactNode }) {
   const token = useAuth((s) => s.accessToken);
-  return token ? <>{children}</> : <Navigate to="/login" replace />;
+  const utilisateur = useAuth((s) => s.utilisateur);
+  const { pathname, search } = useLocation();
+  if (token && estAdmin(utilisateur)) return <>{children}</>;
+  return <Navigate to={R.connexion} replace state={{ depuis: pathname + search }} />;
+}
+
+/** Favoris et liens antérieurs à /admin : redirection vers l'adresse équivalente. */
+function AncienneAdresse() {
+  const { pathname, search } = useLocation();
+  const cible = nouvelleAdresse(pathname);
+  return <Navigate to={cible ? cible + search : R.tableauDeBord} replace />;
+}
+
+function PageIntrouvable() {
+  return (
+    <div className="empty">
+      <p><strong>Page introuvable</strong></p>
+      <p className="small muted">L'adresse demandée ne correspond à aucun écran du back-office.</p>
+      <Link to={R.tableauDeBord} className="btn secondary sm" style={{ marginTop: 12 }}>Retour au tableau de bord</Link>
+    </div>
+  );
 }
 
 export default function App() {
   return (
     <Suspense fallback={<Loader />}>
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/mot-de-passe-oublie" element={<MotDePasseOubliePage />} />
+      <Route path="/admin" element={<Navigate to={R.tableauDeBord} replace />} />
+      <Route path={R.connexion} element={<LoginPage />} />
+      <Route path={R.motDePasseOublie} element={<MotDePasseOubliePage />} />
       <Route
         element={
           <Protege>
@@ -65,57 +92,59 @@ export default function App() {
           </Protege>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="analyses" element={<AnalysesPage />} />
+        <Route path={R.tableauDeBord} element={<DashboardPage />} />
+        <Route path={R.analyses} element={<AnalysesPage />} />
 
-        <Route path="colis" element={<ColisListPage />} />
-        <Route path="colis/:id" element={<ColisDetailPage />} />
-        <Route path="conteneurs" element={<ConteneursPage />} />
-        <Route path="conteneurs/:id" element={<ConteneurDetailPage />} />
-        <Route path="enlevements" element={<EnlevementsPage />} />
-        <Route path="tournees" element={<TourneesCollectePage />} />
-        <Route path="douane" element={<DouanePage />} />
-        <Route path="douane/:id" element={<DouaneDetailPage />} />
-        <Route path="inventaire" element={<InventairePage />} />
-        <Route path="reclamations" element={<ReclamationsPage />} />
-        <Route path="reclamations/:id" element={<ReclamationDetailPage />} />
+        <Route path={R.colis} element={<ColisListPage />} />
+        <Route path={`${D.colis}/:id`} element={<ColisDetailPage />} />
+        <Route path={R.conteneurs} element={<ConteneursPage />} />
+        <Route path={`${D.conteneur}/:id`} element={<ConteneurDetailPage />} />
+        <Route path={R.enlevements} element={<EnlevementsPage />} />
+        <Route path={R.tournees} element={<TourneesCollectePage />} />
+        <Route path={R.douane} element={<DouanePage />} />
+        <Route path={`${D.douane}/:id`} element={<DouaneDetailPage />} />
+        <Route path={R.inventaire} element={<InventairePage />} />
+        <Route path={R.reclamations} element={<ReclamationsPage />} />
+        <Route path={`${D.reclamation}/:id`} element={<ReclamationDetailPage />} />
 
-        <Route path="factures" element={<FacturesPage />} />
-        <Route path="factures/:id" element={<FactureDetailPage />} />
-        <Route path="paiements" element={<PaiementsPage />} />
+        <Route path={R.factures} element={<FacturesPage />} />
+        <Route path={`${D.facture}/:id`} element={<FactureDetailPage />} />
+        <Route path={R.paiements} element={<PaiementsPage />} />
 
-        <Route path="clients" element={<ClientsPage />} />
-        <Route path="clients/:id" element={<ClientDetailPage />} />
-        <Route path="parrainage" element={<ParrainagePage />} />
-        <Route path="personnel" element={<PersonnelPage />} />
-        <Route path="administrateurs" element={<AdminsPage />} />
+        <Route path={R.clients} element={<ClientsPage />} />
+        <Route path={`${D.client}/:id`} element={<ClientDetailPage />} />
+        <Route path={R.parrainage} element={<ParrainagePage />} />
+        <Route path={R.personnel} element={<PersonnelPage />} />
+        <Route path={R.administrateurs} element={<AdminsPage />} />
 
-        <Route path="points-collecte" element={<PointsCollectePage />} />
-        <Route path="points-collecte/:id" element={<PointDetailPage />} />
-        <Route path="villes" element={<VillesPage />} />
-        <Route path="zones" element={<ZonesPage />} />
+        <Route path={R.pointsCollecte} element={<PointsCollectePage />} />
+        <Route path={`${D.pointCollecte}/:id`} element={<PointDetailPage />} />
+        <Route path={R.villes} element={<VillesPage />} />
+        <Route path={R.zones} element={<ZonesPage />} />
 
-        <Route path="services" element={<ServicesPage />} />
-        <Route path="tarifs" element={<TarifsPage />} />
-        <Route path="grille-tarifaire" element={<GrilleTarifairePage />} />
-        <Route path="surcharges" element={<SurchargesPage />} />
-        <Route path="jours-feries" element={<JoursFeriesPage />} />
+        <Route path={R.services} element={<ServicesPage />} />
+        <Route path={R.tarifs} element={<TarifsPage />} />
+        <Route path={R.grilleTarifaire} element={<GrilleTarifairePage />} />
+        <Route path={R.surcharges} element={<SurchargesPage />} />
+        <Route path={R.joursFeries} element={<JoursFeriesPage />} />
 
-        <Route path="emballages" element={<EmballagesPage />} />
-        <Route path="annonces" element={<AnnoncesPage />} />
-        <Route path="avis" element={<AvisPage />} />
-        <Route path="faq" element={<FaqPage />} />
-        <Route path="versions-app" element={<VersionsAppPage />} />
+        <Route path={R.emballages} element={<EmballagesPage />} />
+        <Route path={R.annonces} element={<AnnoncesPage />} />
+        <Route path={R.avis} element={<AvisPage />} />
+        <Route path={R.faq} element={<FaqPage />} />
+        <Route path={R.versionsApp} element={<VersionsAppPage />} />
 
-        <Route path="parametres" element={<ParametresPage />} />
-        <Route path="modeles-emails" element={<ModelesEmailsPage />} />
-        <Route path="suppressions-compte" element={<SuppressionsComptePage />} />
-        <Route path="journal" element={<JournalPage />} />
+        <Route path={R.parametres} element={<ParametresPage />} />
+        <Route path={R.modelesEmails} element={<ModelesEmailsPage />} />
+        <Route path={R.suppressionsCompte} element={<SuppressionsComptePage />} />
+        <Route path={R.journal} element={<JournalPage />} />
 
-        <Route path="profil" element={<ProfilPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path={R.profil} element={<ProfilPage />} />
+        <Route path={R.notifications} element={<NotificationsPage />} />
+        <Route path="/admin/*" element={<PageIntrouvable />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Anciennes adresses (sans /admin) : redirigées vers les nouvelles, sinon 404 */}
+      <Route path="*" element={<AncienneAdresse />} />
     </Routes>
     </Suspense>
   );

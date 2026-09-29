@@ -19,9 +19,9 @@ npm run dev              # http://localhost:5175
 Le navigateur appelle `/api/...` ; le serveur Vite relaie vers le backend. Il n'y a donc
 aucun CORS à configurer, et le cookie httpOnly du refresh token circule normalement.
 
-En production, servir `dist/` derrière un reverse proxy qui relaie `/api` vers le backend,
-ou définir `VITE_API_URL` avec l'URL publique de l'API (le backend doit alors l'autoriser
-dans `CORS_ORIGIN`).
+En production, servir `dist/` derrière un relais qui transmet `/api` au backend (Nginx : `deploy/` ;
+Render : réécriture de `render.yaml`). Une URL d'API absolue dans `VITE_API_URL` reste possible mais
+oblige à garder le refresh token côté navigateur et à autoriser l'origine dans `CORS_ORIGIN`.
 
 ## Qualité et sécurité
 
@@ -50,14 +50,13 @@ Le fichier `render.yaml` décrit un **site statique** : `npm ci && npm run build
 réécriture de toutes les URL vers `index.html` (React Router) et en-têtes de cache et de sécurité.
 
 1. Dans Render : **New > Blueprint**, choisir le dépôt `jeune-dev/Yobante-colis-admin`, branche `main`.
-2. Renseigner `VITE_API_URL` avec l'URL publique de l'API **préfixe `/api/v1` compris**
-   (valeur provisoire : `https://yobnate-colis-back.onrender.com/api/v1`).
-   Vite l'intègre **au build** : après l'avoir modifiée, relancer un déploiement.
-3. Côté backend, ajouter l'URL du site Render (par ex. `https://yobante-colis-admin.onrender.com`)
-   à `CORS_ORIGIN`, sinon le navigateur bloque les appels.
+2. Laisser `VITE_API_URL` **vide** : la règle de réécriture `/api/*` de `render.yaml` relaie les appels
+   vers `https://yobnate-colis-back.onrender.com/api/v1/*`. Le navigateur ne parle qu'au domaine de
+   l'admin : pas de CORS, et le refresh token reste dans le cookie httpOnly (`sameSite=strict`) du
+   backend, jamais en `localStorage`. Si l'URL du backend change, modifier la destination de la règle.
+3. Vite lit `VITE_API_URL` **au build** : après une modification, relancer un déploiement.
 
-Chaque push sur `main` redéploie automatiquement. Le jeton de rafraîchissement est envoyé dans le
-corps des requêtes : le cookie `sameSite=strict` du backend n'est pas nécessaire entre deux domaines.
+Chaque push sur `main` redéploie automatiquement.
 
 ## Écrans
 

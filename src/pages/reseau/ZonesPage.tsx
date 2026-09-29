@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
+import { toutesLesPages } from '@/lib/options';
 import type { Liste, Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -65,7 +66,7 @@ export default function ZonesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.zones.length ? <Empty>Aucune zone</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.zones.length ? <Empty>Aucune zone</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Code</th><th>Nom</th><th>Pays</th><th>Majoration</th><th>Délai +</th><th>Villes</th><th>État</th><th /></tr></thead>
@@ -105,9 +106,9 @@ export default function ZonesPage() {
           champs={CHAMPS.map((c) => (c.name === 'pays' && edition !== 'nouvelle' ? { ...c, disabled: true } : c))}
           initial={edition === 'nouvelle' ? { pays: 'SN', majorationPourcent: 0, delaiSupplementaireJours: 0, isActive: true } : (edition as never)}
           succes={edition === 'nouvelle' ? 'Zone créée' : 'Zone mise à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/zones', corps);
-            else await api.put(`/admin/zones/${edition.id}`, corps);
+            else await api.put(`/admin/zones/${edition.id}`, corps, avecVersion(version));
             invalider('zones');
           }}
           onClose={() => setEdition(null)}
@@ -126,7 +127,7 @@ function DialogueVilles({ zone, onClose }: { zone: Zone; onClose: () => void }) 
   });
   const libres = useQuery({
     queryKey: ['villes', 'sans-zone', zone.pays],
-    queryFn: () => api.get<{ villes: { id: string; nom: string }[] }>('/admin/villes', { pays: zone.pays, sansZone: true, limit: 100 }).then((r) => r.villes),
+    queryFn: () => toutesLesPages<{ id: string; nom: string }>('/admin/villes', 'villes', { pays: zone.pays, sansZone: true }),
   });
   const [ajout, setAjout] = useState<string[]>([]);
 
@@ -145,7 +146,7 @@ function DialogueVilles({ zone, onClose }: { zone: Zone; onClose: () => void }) 
   return (
     <Modal title={`Villes de la zone ${zone.nom}`} onClose={onClose} large>
       <div className="section-label">Villes rattachées</div>
-      {detail.isLoading ? <Loader /> : !detail.data?.villes?.length ? <p className="muted small">Aucune ville</p> : (
+      {detail.isLoading ? <Loader /> : detail.error ? <ErrorBox error={detail.error} /> : !detail.data?.villes?.length ? <p className="muted small">Aucune ville</p> : (
         <div className="chips">
           {detail.data.villes.map((v) => (
             <span key={v.id} className="chip">
@@ -159,7 +160,7 @@ function DialogueVilles({ zone, onClose }: { zone: Zone; onClose: () => void }) 
       )}
 
       <div className="section-label">Rattacher des villes sans zone ({libelle(PAYS, zone.pays)})</div>
-      {libres.isLoading ? <Loader /> : !libres.data?.length ? <p className="muted small">Toutes les villes de ce pays ont une zone.</p> : (
+      {libres.isLoading ? <Loader /> : libres.error ? <ErrorBox error={libres.error} /> : !libres.data?.length ? <p className="muted small">Toutes les villes de ce pays ont une zone.</p> : (
         <>
           <div className="chips">
             {libres.data.map((v) => (

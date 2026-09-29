@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
-import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast, ligneCliquable } from '@/components/ui';
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
 
@@ -34,13 +34,13 @@ export default function ModelesEmailsPage() {
       </div>
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun modèle</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucun modèle</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Modèle</th><th>Sujet</th><th>Variables</th><th>Version</th><th /></tr></thead>
               <tbody>
                 {q.data.map((m) => (
-                  <tr key={m.code} className="cliquable" onClick={() => setEdition(m)}>
+                  <tr key={m.code} className="cliquable" {...ligneCliquable(() => setEdition(m))}>
                     <td><span className="mono">{m.code}</span><div className="muted small">{m.description}</div></td>
                     <td className="small">{m.sujet}</td>
                     <td className="small mono">{m.variables.map((v) => `{{${v}}}`).join(' ')}</td>
@@ -80,7 +80,12 @@ function DialogueModele({ modele, onClose }: { modele: Modele; onClose: () => vo
   const enregistrer = async () => {
     setEnvoi(true);
     try {
-      await api.put(`/admin/modeles-emails/${modele.code}`, { sujet, corpsHtml, isActive });
+      // Un modèle jamais personnalisé n'a pas de version : aucun verrou dans ce cas
+      await api.put(
+        `/admin/modeles-emails/${modele.code}`,
+        { sujet, corpsHtml, isActive },
+        avecVersion((modele as { updatedAt?: string }).updatedAt)
+      );
       toast.success('Modèle enregistré');
       invalider('modeles-emails');
       onClose();

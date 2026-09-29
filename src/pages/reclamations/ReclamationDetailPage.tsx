@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
+import { toutesLesPages } from '@/lib/options';
 import type { Personne, Reclamation } from '@/api/types';
 import { useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
@@ -9,6 +10,7 @@ import { Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/
 import { PRIORITES, STATUTS_RECLAMATION, TRANSITIONS_RECLAMATION, TYPES_RECLAMATION, libelle } from '@/lib/labels';
 import { dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
+import { R, D } from '@/lib/routes';
 
 export default function ReclamationDetailPage() {
   const { id = '' } = useParams();
@@ -36,16 +38,19 @@ export default function ReclamationDetailPage() {
   });
   const agents = useQuery({
     queryKey: ['admins', 'options'],
-    queryFn: () => api.get<{ administrateurs: Personne[] }>('/admin/admins', { limit: 100 }).then((r) => r.administrateurs),
+    queryFn: () => toutesLesPages<Personne>('/admin/admins', 'administrateurs'),
     staleTime: 5 * 60_000,
   });
-  const assigner = useAction((agentId: string) => api.patch(`/admin/reclamations/${id}/assigner`, { agentId }), {
-    succes: 'Réclamation assignée',
+  // agentId null : retire l'assignation (la réclamation retourne dans la file commune)
+  const assigner = useAction((agentId: string | null) => api.patch(`/admin/reclamations/${id}/assigner`, { agentId }), {
+    succes: 'Assignation mise à jour',
     invalider: ['reclamations'],
   });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const r = q.data!;
   const transitions = TRANSITIONS_RECLAMATION[r.statut] ?? [];
 
@@ -54,9 +59,9 @@ export default function ReclamationDetailPage() {
 
   return (
     <>
-      <span className="back" onClick={() => navigate('/reclamations')}>
+      <button type="button" className="back" onClick={() => navigate(R.reclamations)}>
         <Icon name="arrow-left" size={15} /> Réclamations
-      </span>
+      </button>
       <div className="hero">
         <span className="hero-ref">{r.reference}</span>
         <StatutBadge table={STATUTS_RECLAMATION} valeur={r.statut} />
@@ -129,13 +134,13 @@ export default function ReclamationDetailPage() {
         <Card title="Dossier">
           <div className="kv one">
             <KV label="Type">{libelle(TYPES_RECLAMATION, r.type)}</KV>
-            <KV label="Client">{r.client ? <Link to={`/clients/${r.client.id}`}>{nomComplet(r.client)}</Link> : '—'}</KV>
+            <KV label="Client">{r.client ? <Link to={`${D.client}/${r.client.id}`}>{nomComplet(r.client)}</Link> : '—'}</KV>
             <KV label="Contact">{r.client?.email}{r.client?.telephone && <div className="muted small">{r.client.telephone}</div>}</KV>
-            <KV label="Colis">{r.colis ? <Link to={`/colis/${r.colis.id}`}>{r.colis.reference}</Link> : '—'}</KV>
+            <KV label="Colis">{r.colis ? <Link to={`${D.colis}/${r.colis.id}`}>{r.colis.reference}</Link> : '—'}</KV>
             <KV label="Montant réclamé">{montant(r.montantReclame, r.devise)}</KV>
             <KV label="Montant accordé">{montant(r.montantAccorde, r.devise)}</KV>
             <KV label="Agent">
-              <select className="select" value={r.agentAssigne?.id ?? ''} onChange={(e) => e.target.value && assigner.mutate(e.target.value)}>
+              <select className="select" aria-label="Agent assigné" value={r.agentAssigne?.id ?? ''} onChange={(e) => assigner.mutate(e.target.value || null)} disabled={assigner.isPending}>
                 <option value="">— Non assignée —</option>
                 {agents.data?.map((a) => <option key={a.id} value={a.id}>{nomComplet(a)}</option>)}
               </select>
@@ -170,7 +175,8 @@ function DialogueTraitement({ reclamation, transitions, onClose }: { reclamation
         motifRejet: statut === 'rejetee' ? motifRejet : undefined,
         montantAccorde: statut === 'resolue' && montantAccorde ? Number(montantAccorde) : undefined,
       }),
-    { succes: 'Réclamation mise à jour', invalider: ['reclamations', 'dashboard'] }
+    // Une indemnité accordée génère un avoir : la facturation change aussi
+    { succes: 'Réclamation mise à jour', invalider: ['reclamations', 'dashboard', 'factures'] }
   );
 
   const valider = () => {

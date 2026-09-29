@@ -6,10 +6,11 @@ import type { Colis, Liste } from '@/api/types';
 import { estAdmin, useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
-import { Badge, Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
+import { Badge, Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast, ligneCliquable } from '@/components/ui';
 import { CATEGORIES, CATEGORIES_COURT, MODES_DEPOT, STATUTS_COLIS, TYPES_CONTENU } from '@/lib/labels';
 import { date, montant, poids, telecharger } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 const VUES = [
   { value: '', label: 'Tous' },
@@ -26,6 +27,8 @@ interface Statistiques {
   chiffreAffaires: number;
   poidsTotalKg: number;
   panierMoyen: number;
+  /** Montants par devise : euros et francs CFA ne s'additionnent pas. */
+  parDevise?: { devise: string; total: number; chiffreAffaires: number; panierMoyen: number }[];
   parCorridor: { corridor: string; total: number; poidsKg: number }[];
 }
 
@@ -78,7 +81,7 @@ export default function ColisListPage() {
     if (!numero.trim()) return;
     try {
       const r = await api.get<{ colis: Colis }>(`/admin/colis/recherche/${encodeURIComponent(numero.trim())}`);
-      navigate(`/colis/${r.colis.id}`);
+      navigate(`${D.colis}/${r.colis.id}`);
     } catch (e) {
       toast.error(e);
     }
@@ -94,9 +97,19 @@ export default function ColisListPage() {
     <>
       <div className="stats">
         <Stat icon="package" value={stats.data?.total ?? '—'} label="Colis (sélection)" />
-        <Stat icon="coins" ton="vert" value={stats.data ? stats.data.chiffreAffaires.toLocaleString('fr-FR') : '—'} label="Chiffre d'affaires" hint="Toutes devises confondues" />
+        <Stat
+          icon="coins"
+          ton="vert"
+          value={stats.data?.parDevise?.length ? stats.data.parDevise.map((d) => montant(d.chiffreAffaires, d.devise)).join(' · ') : '—'}
+          label="Chiffre d'affaires"
+        />
         <Stat icon="scale" ton="violet" value={stats.data ? poids(stats.data.poidsTotalKg) : '—'} label="Poids total" />
-        <Stat icon="shopping-cart" ton="cyan" value={stats.data ? stats.data.panierMoyen.toLocaleString('fr-FR') : '—'} label="Panier moyen" />
+        <Stat
+          icon="shopping-cart"
+          ton="cyan"
+          value={stats.data?.parDevise?.length ? stats.data.parDevise.map((d) => montant(d.panierMoyen, d.devise)).join(' · ') : '—'}
+          label="Panier moyen"
+        />
       </div>
 
       <div className="toolbar">
@@ -123,6 +136,7 @@ export default function ColisListPage() {
             <input
               className="input"
               style={{ minWidth: 220 }}
+              aria-label="Ouvrir un colis par numéro de suivi ou de pièce"
               placeholder="N° de suivi ou de pièce ↵"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
@@ -136,9 +150,10 @@ export default function ColisListPage() {
       {avances && (
         <Card>
           <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-            <input className="input" placeholder="Expéditeur" value={filtres.expediteur} onChange={(e) => set('expediteur', e.target.value)} />
-            <input className="input" placeholder="Destinataire" value={filtres.destinataire} onChange={(e) => set('destinataire', e.target.value)} />
-            <input className="input" placeholder="Produit (smartphone, frigo…)" value={filtres.produit} onChange={(e) => set('produit', e.target.value)} />
+            {/* Saisie temporisée : une requête après la frappe, pas une par caractère */}
+            <SearchInput placeholder="Expéditeur" value={filtres.expediteur} onChange={(v) => set('expediteur', v)} />
+            <SearchInput placeholder="Destinataire" value={filtres.destinataire} onChange={(v) => set('destinataire', v)} />
+            <SearchInput placeholder="Produit (smartphone, frigo…)" value={filtres.produit} onChange={(v) => set('produit', v)} />
             <select className="select" value={filtres.typeContenu} onChange={(e) => set('typeContenu', e.target.value)}>
               <option value="">Tout contenu</option>
               {Object.entries(TYPES_CONTENU).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -168,24 +183,24 @@ export default function ColisListPage() {
       <Card flush>
         {q.isLoading ? (
           <Loader />
-        ) : !lignes.length ? (
+        ) : q.error ? null : !lignes.length ? (
           <Empty>Aucun colis ne correspond aux filtres</Empty>
         ) : (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  {admin && <th><input type="checkbox" checked={toutCoche} onChange={basculerTout} /></th>}
+                  {admin && <th><input type="checkbox" aria-label="Tout sélectionner sur la page" checked={toutCoche} onChange={basculerTout} /></th>}
                   <th>Référence</th><th>Cat.</th><th>Expéditeur</th><th>Destinataire</th><th>Trajet</th>
                   <th>Poids</th><th className="right">Montant</th><th>Statut</th><th>Créé le</th>
                 </tr>
               </thead>
               <tbody>
                 {lignes.map((c) => (
-                  <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
+                  <tr key={c.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.colis}/${c.id}`))}>
                     {admin && (
                       <td onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" checked={selection.includes(c.id)} onChange={() => basculer(c.id)} />
+                        <input type="checkbox" aria-label={`Sélectionner ${c.reference}`} checked={selection.includes(c.id)} onChange={() => basculer(c.id)} />
                       </td>
                     )}
                     <td className="mono">{c.reference}</td>

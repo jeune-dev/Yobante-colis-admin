@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Liste, Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -97,7 +97,7 @@ export default function TarifsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.tarifs.length ? <Empty>Aucun tarif</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.tarifs.length ? <Empty>Aucun tarif</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Service</th><th>Corridor</th><th>Tranche</th><th className="right">Prix de base</th><th className="right">€/kg sup.</th><th className="right">Minimum</th><th>Validité</th><th>État</th><th /></tr></thead>
@@ -138,9 +138,9 @@ export default function TarifsPage() {
           champs={edition === 'nouveau' ? champsCreation : CHAMPS_EDITION}
           initial={edition === 'nouveau' ? { paysDepart: 'FR', paysArrivee: 'SN', devise: 'EUR', poidsMinKg: 0, prixParKgSupplementaire: 0, montantMinimum: 0, isActive: true } : (edition as never)}
           succes={edition === 'nouveau' ? 'Tarif créé' : 'Tarif mis à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouveau') await api.post('/admin/tarifs', corps);
-            else await api.put(`/admin/tarifs/${edition.id}`, corps);
+            else await api.put(`/admin/tarifs/${edition.id}`, corps, avecVersion(version));
             invalider('tarifs');
           }}
           onClose={() => setEdition(null)}

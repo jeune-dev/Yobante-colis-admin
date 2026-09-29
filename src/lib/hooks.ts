@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui';
@@ -77,12 +77,31 @@ export function useAction<V = void, R = unknown>(
   { succes, invalider = [] }: { succes?: string; invalider?: string[] } = {}
 ) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: fn,
+  // Verrou synchrone : `isPending` n'est visible qu'au rendu suivant, un double clic
+  // rapide (ou un bouton de ligne non désactivé) lancerait sinon deux fois l'opération.
+  const enCours = useRef(false);
+  const mutation = useMutation({
+    mutationFn: async (v: V) => {
+      try {
+        return await fn(v);
+      } finally {
+        enCours.current = false;
+      }
+    },
     onSuccess: () => {
       if (succes) toast.success(succes);
       invalider.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
     },
     onError: (e) => toast.error(e),
   });
+  const { mutate: lancer } = mutation;
+  const mutate = useCallback(
+    (...args: Parameters<typeof lancer>) => {
+      if (enCours.current) return;
+      enCours.current = true;
+      lancer(...args);
+    },
+    [lancer]
+  ) as typeof lancer;
+  return { ...mutation, mutate };
 }

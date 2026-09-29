@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader, Modal, toast } from '@/components/ui';
 import { CATEGORIES_COURT, CATEGORIES, DEVISES, TYPES_EMBALLAGE_CATALOGUE, libelle } from '@/lib/labels';
-import { montant } from '@/lib/format';
+import { montant, urlSure } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 
 interface Emballage {
@@ -75,14 +75,14 @@ export default function EmballagesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun emballage</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucun emballage</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th /><th>Code</th><th>Emballage</th><th>Type</th><th>Dimensions</th><th>Catégories</th><th className="right">Prix</th><th>Stock</th><th>État</th><th /></tr></thead>
               <tbody>
                 {q.data.map((e) => (
                   <tr key={e.id}>
-                    <td style={{ width: 48 }}>{e.photos?.[0] && <img src={e.photos[0].url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />}</td>
+                    <td style={{ width: 48 }}>{urlSure(e.photos?.[0]?.url) && <img src={urlSure(e.photos?.[0]?.url)} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />}</td>
                     <td className="mono">{e.code}</td>
                     <td><strong>{e.libelle}</strong>{e.description && <div className="muted small">{e.description}</div>}</td>
                     <td>{libelle(TYPES_EMBALLAGE_CATALOGUE, e.type)}</td>
@@ -123,11 +123,11 @@ export default function EmballagesPage() {
           champs={CHAMPS}
           initial={edition === 'nouveau' ? { type: 'contenant', devise: 'EUR', isActive: true, categoriesEligibles: ['colis_moyen', 'colis_xxl'] } : (edition as never)}
           succes={edition === 'nouveau' ? 'Emballage ajouté' : 'Emballage mis à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             const c: Record<string, unknown> = { ...corps, code: typeof corps.code === 'string' ? corps.code.toUpperCase() : corps.code };
             if (Array.isArray(c.categoriesEligibles) && !c.categoriesEligibles.length) delete c.categoriesEligibles;
             if (edition === 'nouveau') await api.post('/admin/emballages', c);
-            else await api.put(`/admin/emballages/${edition.id}`, c);
+            else await api.put(`/admin/emballages/${edition.id}`, c, avecVersion(version));
             invalider('emballages', 'dashboard');
           }}
           onClose={() => setEdition(null)}
@@ -173,8 +173,13 @@ function DialoguePhotos({ emballage, onClose }: { emballage: Emballage; onClose:
         <div className="photos">
           {emballage.photos.map((p) => (
             <div key={p.publicId} style={{ position: 'relative' }}>
-              <img src={p.url} alt="" />
-              <button className="btn danger sm" style={{ position: 'absolute', top: 4, right: 4 }} onClick={() => retirer(p.publicId)}>
+              <img src={urlSure(p.url)} alt="" />
+              <button
+                className="btn danger sm"
+                style={{ position: 'absolute', top: 4, right: 4 }}
+                aria-label="Supprimer la photo"
+                onClick={() => confirm('Supprimer définitivement cette photo ?') && retirer(p.publicId)}
+              >
                 <Icon name="x" size={12} />
               </button>
             </div>

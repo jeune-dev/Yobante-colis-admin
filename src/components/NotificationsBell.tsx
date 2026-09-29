@@ -8,6 +8,7 @@ import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
 import { routeDepuisLien } from '@/lib/liens';
 import type { Notification } from '@/pages/compte/NotificationsPage';
+import { R } from '@/lib/routes';
 
 /** Cloche du bandeau : compteur de non-lues (rafraîchi chaque minute) et aperçu des dernières. */
 export default function NotificationsBell() {
@@ -44,7 +45,14 @@ export default function NotificationsBell() {
   const total = compteur.data ?? 0;
   return (
     <div style={{ position: 'relative' }}>
-      <button className="btn ghost sm" onClick={() => setOuvert((o) => !o)} title="Notifications" style={{ position: 'relative' }}>
+      <button
+        className="btn ghost sm"
+        onClick={() => setOuvert((o) => !o)}
+        title="Notifications"
+        aria-label={total > 0 ? `Notifications (${total} non lues)` : 'Notifications'}
+        aria-expanded={ouvert}
+        style={{ position: 'relative' }}
+      >
         <Icon name="inbox" size={19} />
         {total > 0 && <span className="bell-count">{total > 99 ? '99+' : total}</span>}
       </button>
@@ -54,12 +62,20 @@ export default function NotificationsBell() {
           <div className="bell-pop">
             <div className="bell-head">
               <strong>Notifications</strong>
-              <Link to="/notifications" className="small" onClick={() => setOuvert(false)}>Tout voir</Link>
+              <Link to={R.notifications} className="small" onClick={() => setOuvert(false)}>Tout voir</Link>
             </div>
-            {!dernieres.data ? <div className="muted small" style={{ padding: 12 }}>Chargement…</div>
+            {dernieres.error ? <div className="muted small" style={{ padding: 12 }}>Impossible de charger les notifications.</div>
+              : !dernieres.data ? <div className="muted small" style={{ padding: 12 }}>Chargement…</div>
               : !dernieres.data.length ? <div className="muted small" style={{ padding: 12 }}>Aucune notification</div>
               : dernieres.data.map((n) => (
-                <div key={n.id} className={`bell-item${n.isRead ? '' : ' non-lue'}`} onClick={() => ouvrir(n)}>
+                <div
+                  key={n.id}
+                  className={`bell-item${n.isRead ? '' : ' non-lue'}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => ouvrir(n)}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), ouvrir(n))}
+                >
                   <div className="small" style={{ fontWeight: n.isRead ? 500 : 700 }}>{n.titre}</div>
                   <div className="small muted">{n.message}</div>
                   <div className="muted" style={{ fontSize: '0.7rem' }}>{dateHeure(n.createdAt)}</div>

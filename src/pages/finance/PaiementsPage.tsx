@@ -7,9 +7,10 @@ import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
 import { Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
 import { METHODES_PAIEMENT, STATUTS_PAIEMENT, libelle } from '@/lib/labels';
-import { dateHeure, montant, nomComplet, telecharger } from '@/lib/format';
+import { aujourdhui, dateHeure, montant, nomComplet, telecharger } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
 import { usePointsOptions } from '@/lib/options';
+import { D } from '@/lib/routes';
 
 interface StatsPaiements {
   parMethode: { methode: string; devise: string; nombre: number; total: number }[];
@@ -82,7 +83,7 @@ export default function PaiementsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.paiements.length ? <Empty>Aucun paiement</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.paiements.length ? <Empty>Aucun paiement</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -91,9 +92,9 @@ export default function PaiementsPage() {
               <tbody>
                 {q.data.paiements.map((p) => (
                   <tr key={p.id}>
-                    <td className="mono"><a style={{ cursor: 'pointer' }} onClick={() => setDetail(p.id)}>{p.reference}</a></td>
+                    <td className="mono"><button type="button" className="lien" onClick={() => setDetail(p.id)}>{p.reference}</button></td>
                     <td>{nomComplet(p.User)}</td>
-                    <td className="mono">{p.facture ? <Link to={`/factures/${p.facture.id}`}>{p.facture.reference}</Link> : '—'}</td>
+                    <td className="mono">{p.facture ? <Link to={`${D.facture}/${p.facture.id}`}>{p.facture.reference}</Link> : '—'}</td>
                     <td>{libelle(METHODES_PAIEMENT, p.methode)}</td>
                     <td className="right">{montant(p.montant, p.devise)}</td>
                     <td><StatutBadge table={STATUTS_PAIEMENT} valeur={p.statut} /></td>
@@ -130,7 +131,7 @@ export default function PaiementsPage() {
           submitLabel="Rembourser"
           danger
           succes="Remboursement effectué"
-          onSubmit={async (corps) => { await api.patch(`/admin/paiements/${action.paiement.id}/rembourser`, corps); invalider('paiements', 'factures'); }}
+          onSubmit={async (corps) => { await api.patch(`/admin/paiements/${action.paiement.id}/rembourser`, corps); invalider('paiements', 'factures', 'colis'); }}
           onClose={() => setAction(null)}
         />
       )}
@@ -141,7 +142,7 @@ export default function PaiementsPage() {
           submitLabel="Confirmer"
           danger
           succes="Paiement marqué en échec"
-          onSubmit={async (corps) => { await api.patch(`/admin/paiements/${action.paiement.id}/echec`, corps); invalider('paiements', 'factures'); }}
+          onSubmit={async (corps) => { await api.patch(`/admin/paiements/${action.paiement.id}/echec`, corps); invalider('paiements', 'factures', 'colis'); }}
           onClose={() => setAction(null)}
         />
       )}
@@ -166,7 +167,7 @@ function DialogueDetail({ id, onClose }: { id: string; onClose: () => void }) {
           <KV label="Méthode">{libelle(METHODES_PAIEMENT, p.methode)}</KV>
           <KV label="Réf. transaction">{p.referenceTransaction || '—'}</KV>
           <KV label="Client">{nomComplet(p.User)}</KV>
-          <KV label="Facture">{p.facture ? <Link to={`/factures/${p.facture.id}`} onClick={onClose}>{p.facture.reference}</Link> : '—'}</KV>
+          <KV label="Facture">{p.facture ? <Link to={`${D.facture}/${p.facture.id}`} onClick={onClose}>{p.facture.reference}</Link> : '—'}</KV>
           <KV label="Point d'encaissement">{p.pointEncaissement?.nom ?? '—'}</KV>
           <KV label="Enregistré par">{p.enregistrePar ? nomComplet(p.enregistrePar) : 'En ligne'}</KV>
           <KV label="Payé le">{dateHeure(p.payeAt)}</KV>
@@ -191,7 +192,7 @@ interface Caisse {
 function DialogueCaisse({ onClose }: { onClose: () => void }) {
   const points = usePointsOptions();
   const [pointId, setPointId] = useState('');
-  const [jour, setJour] = useState(new Date().toISOString().slice(0, 10));
+  const [jour, setJour] = useState(aujourdhui);
   const q = useQuery({
     queryKey: ['paiements', 'caisse', pointId, jour],
     queryFn: () => api.get<{ caisse: Caisse }>(`/admin/paiements/caisse/${pointId}`, { date: jour }).then((r) => r.caisse),

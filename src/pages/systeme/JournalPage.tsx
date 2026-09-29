@@ -43,7 +43,7 @@ export default function JournalPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.activites.length ? <Empty>Aucune activité</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.activites.length ? <Empty>Aucune activité</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Date</th><th>Auteur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead>

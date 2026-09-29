@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Client, Liste, PointRef } from '@/api/types';
 import Icon from '@/components/Icon';
 import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, SearchInput, toast } from '@/components/ui';
@@ -8,6 +8,7 @@ import { PAYS, ROLES, libelle } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
+import { usePointsOptions } from '@/lib/options';
 
 type Membre = Client & { pointAffectation?: PointRef };
 
@@ -47,7 +48,7 @@ export default function PersonnelPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.personnel.length ? <Empty>Aucun membre du personnel</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.personnel.length ? <Empty>Aucun membre du personnel</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Nom</th><th>Rôle</th><th>Contact</th><th>Pays</th><th>Point</th><th>Dernière connexion</th><th>État</th></tr></thead>
@@ -63,7 +64,11 @@ export default function PersonnelPage() {
                     <td>
                       <button className="btn ghost sm" onClick={() => setEdition(m)} title="Modifier"><Icon name="pencil" size={14} /></button>{' '}
                       <button className={`btn sm ${m.isActive ? 'secondary' : 'danger'}`}
-                        onClick={() => statut.mutate({ id: m.id, isActive: !m.isActive })}>
+                        title={m.isActive ? 'Désactiver le compte' : 'Réactiver le compte'}
+                        onClick={() =>
+                          confirm(m.isActive ? `Désactiver le compte de ${nomComplet(m)} ?` : `Réactiver le compte de ${nomComplet(m)} ?`) &&
+                          statut.mutate({ id: m.id, isActive: !m.isActive })
+                        }>
                         {m.isActive ? 'Actif' : 'Désactivé'}
                       </button>
                     </td>
@@ -85,11 +90,7 @@ export default function PersonnelPage() {
 function DialogueCreation({ onClose }: { onClose: () => void }) {
   const [f, setF] = useState({ nom: '', prenom: '', email: '', telephone: '', password: '', role: 'coursier', pays: 'SN', pointCollecteId: '' });
   const maj = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
-  const points = useQuery({
-    queryKey: ['points-collecte', 'options', f.pays],
-    queryFn: () => api.get<{ points: PointRef[] }>('/admin/points-collecte', { pays: f.pays, limit: 100 }).then((r) => r.points),
-    enabled: f.role === 'agent_point',
-  });
+  const points = usePointsOptions(f.pays);
   const a = useAction(
     () => api.post('/admin/personnel', { ...f, pointCollecteId: f.role === 'agent_point' ? f.pointCollecteId : undefined }),
     { succes: 'Membre ajouté', invalider: ['personnel'] }
@@ -129,7 +130,7 @@ function DialogueCreation({ onClose }: { onClose: () => void }) {
         <Field label="Point de collecte">
           <select className="select" value={f.pointCollecteId} onChange={maj('pointCollecteId')}>
             <option value="">— Choisir —</option>
-            {points.data?.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.nom}</option>)}
+            {points.data?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
         </Field>
       )}
@@ -142,11 +143,7 @@ function DialogueCreation({ onClose }: { onClose: () => void }) {
 
 function DialogueEdition({ membre, onClose }: { membre: Membre; onClose: () => void }) {
   const invalider = useInvalider();
-  const points = useQuery({
-    queryKey: ['points-collecte', 'options', membre.pays],
-    queryFn: () => api.get<{ points: PointRef[] }>('/admin/points-collecte', { pays: membre.pays, limit: 100 }).then((r) => r.points),
-    enabled: membre.role === 'agent_point',
-  });
+  const points = usePointsOptions(membre.pays);
   if (membre.role === 'agent_point' && points.isLoading) return null;
   return (
     <FormModal
@@ -158,13 +155,13 @@ function DialogueEdition({ membre, onClose }: { membre: Membre; onClose: () => v
         { name: 'pays', label: 'Pays', type: 'select', options: PAYS, required: true },
         {
           name: 'pointCollecteId', label: 'Point de collecte', type: 'select', full: true,
-          options: (points.data ?? []).map((p) => ({ value: p.id, label: `${p.code} — ${p.nom}` })),
+          options: points.data ?? [],
           visible: () => membre.role === 'agent_point',
         },
       ]}
       initial={{ ...membre, pointCollecteId: membre.pointAffectation?.id ?? (membre as { pointCollecteId?: string }).pointCollecteId }}
       succes="Compte mis à jour"
-      onSubmit={async (corps) => { await api.put(`/admin/personnel/${membre.id}`, corps); invalider('personnel'); }}
+      onSubmit={async (corps, { version }) => { await api.put(`/admin/personnel/${membre.id}`, corps, avecVersion(version)); invalider('personnel'); }}
       onClose={onClose}
     />
   );

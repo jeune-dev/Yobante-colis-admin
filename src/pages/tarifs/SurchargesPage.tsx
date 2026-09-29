@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -96,7 +96,7 @@ export default function SurchargesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune surcharge</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucune surcharge</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Code</th><th>Libellé</th><th>Type</th><th>Valeur</th><th>Assiette</th><th>Portée</th><th>État</th><th /></tr></thead>
@@ -142,9 +142,9 @@ export default function SurchargesPage() {
             ? { mode: 'pourcentage', assiette: 'fret', devise: 'XOF', automatique: true, soumiseTva: true, isActive: true, ordreApplication: 0 }
             : (edition as never)}
           succes={edition === 'nouvelle' ? 'Surcharge créée' : 'Surcharge mise à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/surcharges', corps);
-            else await api.put(`/admin/surcharges/${edition.id}`, corps);
+            else await api.put(`/admin/surcharges/${edition.id}`, corps, avecVersion(version));
             invalider('surcharges');
           }}
           onClose={() => setEdition(null)}

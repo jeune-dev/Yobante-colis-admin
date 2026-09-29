@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Client, Colis, Personne } from '@/api/types';
 
-import { Badge, Card, Empty, ErrorBox, Loader, Stat, StatutBadge } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Stat, StatutBadge, ligneCliquable } from '@/components/ui';
 import { PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet } from '@/lib/format';
+import { R, D } from '@/lib/routes';
 
 interface PointsAttention {
   colisEnRetard: { id: string; reference: string; dateLivraisonEstimee?: string }[];
@@ -63,8 +64,10 @@ export default function DashboardPage() {
     queryFn: () => api.get<{ utilisateurs: Client[] }>('/admin/dashboard/derniers-utilisateurs', { limit: 6 }).then((r) => r.utilisateurs),
   });
 
-  if (stats.isLoading) return <Loader />;
-  if (stats.error) return <ErrorBox error={stats.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `stats.data` serait indéfini
+  if (stats.isPending) return <Loader />;
+  if (stats.error) return <ErrorBox error={stats.error} onRetry={() => stats.refetch()} />;
   const s = stats.data!;
   const etude = kpis.data?.etude;
   const max = Math.max(1, ...s.colis.parStatut.map((p) => p.total));
@@ -72,9 +75,9 @@ export default function DashboardPage() {
   return (
     <>
       <div className="stats">
-        <Stat icon="package" value={s.colis.total} label="Colis au total" hint={`+${s.colis.nouveauxAujourdhui} aujourd'hui · +${s.colis.nouveauxCeMois} ce mois`} onClick={() => navigate('/colis')} />
-        <Stat icon="clipboard-list" ton="orange" value={etude?.aEtudier ?? '—'} label="Demandes à étudier" hint={etude ? `${etude.etudeEnRetard} en retard · ${etude.propositionsEnAttente} devis en attente` : undefined} onClick={() => navigate('/colis?aEtudier=true')} />
-        <Stat icon="alert-triangle" ton="rouge" value={s.colis.enRetard} label="Colis en retard" hint={`${s.colis.enSouffrance} en souffrance au retrait`} onClick={() => navigate('/colis?enRetard=true')} />
+        <Stat icon="package" value={s.colis.total} label="Colis au total" hint={`+${s.colis.nouveauxAujourdhui} aujourd'hui · +${s.colis.nouveauxCeMois} ce mois`} onClick={() => navigate(R.colis)} />
+        <Stat icon="clipboard-list" ton="orange" value={etude?.aEtudier ?? '—'} label="Demandes à étudier" hint={etude ? `${etude.etudeEnRetard} en retard · ${etude.propositionsEnAttente} devis en attente` : undefined} onClick={() => navigate(`${R.colis}?aEtudier=true`)} />
+        <Stat icon="alert-triangle" ton="rouge" value={s.colis.enRetard} label="Colis en retard" hint={`${s.colis.enSouffrance} en souffrance au retrait`} onClick={() => navigate(`${R.colis}?enRetard=true`)} />
         <Stat icon="check-circle" ton="vert" value={`${s.colis.tauxLivraison} %`} label="Taux de livraison" />
         <Stat icon="users" ton="violet" value={s.clients.total} label="Clients" hint={`${s.clients.actifs} actifs · +${s.clients.nouveauxCeMois} ce mois`} />
         <Stat icon="coins" ton="cyan" value={s.chiffreAffaires.map((c) => montant(c.encaisse, c.devise)).join(' · ') || '—'} label="Encaissé" />
@@ -86,6 +89,8 @@ export default function DashboardPage() {
         <Card title="Dernières expéditions" flush>
           {derniers.isLoading ? (
             <Loader />
+          ) : derniers.error ? (
+            <ErrorBox error={derniers.error} onRetry={() => derniers.refetch()} />
           ) : !derniers.data?.length ? (
             <Empty>Aucune expédition</Empty>
           ) : (
@@ -96,7 +101,7 @@ export default function DashboardPage() {
                 </thead>
                 <tbody>
                   {derniers.data.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
+                    <tr key={c.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.colis}/${c.id}`))}>
                       <td className="mono">{c.reference}</td>
                       <td>{c.client ? `${c.client.prenom} ${c.client.nom}` : c.expediteurNom}</td>
                       <td className="small">{c.villeDepart?.nom ?? c.paysDepart} → {c.villeArrivee?.nom ?? c.paysArrivee}</td>
@@ -113,7 +118,14 @@ export default function DashboardPage() {
         <Card title="Colis par statut">
           <div className="bars">
             {s.colis.parStatut.filter((p) => p.total > 0).map((p) => (
-              <div key={p.statut} className="bar-row cliquable" onClick={() => navigate(`/colis?statut=${p.statut}`)}>
+              <div
+                key={p.statut}
+                className="bar-row cliquable"
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`${R.colis}?statut=${encodeURIComponent(p.statut)}`)}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`${R.colis}?statut=${encodeURIComponent(p.statut)}`)}
+              >
                 <span>{STATUTS_COLIS[p.statut]?.label ?? p.statut}</span>
                 <div className="bar-track"><div className="bar-fill" style={{ width: `${(p.total / max) * 100}%` }} /></div>
                 <span className="right">{p.total}</span>
@@ -125,20 +137,20 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-3">
-        <Card title="Points d'attention" right={<Link className="small" to="/colis?enRetard=true">Tout voir</Link>}>
-          {!attention.data ? <Loader /> : !attention.data.colisEnRetard.length && !attention.data.colisEnSouffrance.length ? (
+        <Card title="Points d'attention" right={<Link className="small" to={`${R.colis}?enRetard=true`}>Tout voir</Link>}>
+          {attention.error ? <ErrorBox error={attention.error} onRetry={() => attention.refetch()} /> : !attention.data ? <Loader /> : !attention.data.colisEnRetard.length && !attention.data.colisEnSouffrance.length ? (
             <div className="muted small">Rien à signaler</div>
           ) : (
             <div className="bars">
               {attention.data.colisEnRetard.map((c) => (
                 <div key={c.id} className="small">
-                  <Badge ton="rouge">Retard</Badge> <Link to={`/colis/${c.id}`} className="mono">{c.reference}</Link>
+                  <Badge ton="rouge">Retard</Badge> <Link to={`${D.colis}/${c.id}`} className="mono">{c.reference}</Link>
                   <span className="muted"> · prévu le {date(c.dateLivraisonEstimee)}</span>
                 </div>
               ))}
               {attention.data.colisEnSouffrance.map((c) => (
                 <div key={c.id} className="small">
-                  <Badge ton="orange">Souffrance</Badge> <Link to={`/colis/${c.id}`} className="mono">{c.reference}</Link>
+                  <Badge ton="orange">Souffrance</Badge> <Link to={`${D.colis}/${c.id}`} className="mono">{c.reference}</Link>
                   <span className="muted"> · retrait avant le {date(c.dateLimiteRetrait)}</span>
                 </div>
               ))}
@@ -146,12 +158,12 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card title="Nouveaux clients" right={<Link className="small" to="/clients">Tous</Link>}>
-          {!nouveauxClients.data ? <Loader /> : !nouveauxClients.data.length ? <div className="muted small">Aucun</div> : (
+        <Card title="Nouveaux clients" right={<Link className="small" to={R.clients}>Tous</Link>}>
+          {nouveauxClients.error ? <ErrorBox error={nouveauxClients.error} onRetry={() => nouveauxClients.refetch()} /> : !nouveauxClients.data ? <Loader /> : !nouveauxClients.data.length ? <div className="muted small">Aucun</div> : (
             <div className="bars">
               {nouveauxClients.data.map((u) => (
                 <div key={u.id} className="small">
-                  <Link to={`/clients/${u.id}`}>{nomComplet(u)}</Link>
+                  <Link to={`${D.client}/${u.id}`}>{nomComplet(u)}</Link>
                   <span className="muted"> · {libelle(PAYS, u.pays)} · {date(u.createdAt)}</span>
                 </div>
               ))}
@@ -159,8 +171,8 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card title="Dernières activités" right={<Link className="small" to="/journal">Journal</Link>}>
-          {!activites.data ? <Loader /> : !activites.data.length ? <div className="muted small">Aucune</div> : (
+        <Card title="Dernières activités" right={<Link className="small" to={R.journal}>Journal</Link>}>
+          {activites.error ? <ErrorBox error={activites.error} onRetry={() => activites.refetch()} /> : !activites.data ? <Loader /> : !activites.data.length ? <div className="muted small">Aucune</div> : (
             <div className="bars">
               {activites.data.map((a) => (
                 <div key={a.id} className="small">

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '@/api/client';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { api, avecVersion } from '@/api/client';
+import { toutesLesPages } from '@/lib/options';
 import type { Colis, Rotation } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Empty, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/components/ui';
+import { Card, Empty, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast, ligneCliquable } from '@/components/ui';
 import { MODES_TRANSPORT, PAYS, STATUTS_COLIS, STATUTS_ROTATION, STATUTS_ROTATION_CIBLES, libelle } from '@/lib/labels';
 import { date, ouvrirDocument, poids } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
 import { DEVISES } from '@/lib/labels';
+import { R, D } from '@/lib/routes';
 
 export default function ConteneurDetailPage() {
   const { id = '' } = useParams();
@@ -26,7 +28,7 @@ export default function ConteneurDetailPage() {
 
   const decharger = useAction(
     (colisIds: string[]) => api.delete(`/admin/rotations/${id}/colis`, { colisIds }),
-    { succes: 'Colis retiré du conteneur', invalider: ['rotations', 'colis'] }
+    { succes: 'Colis retiré du conteneur', invalider: ['rotations', 'colis', 'embarquables'] }
   );
 
   const manifeste = async () => {
@@ -37,15 +39,17 @@ export default function ConteneurDetailPage() {
     }
   };
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const r = q.data!;
 
   return (
     <>
-      <span className="back" onClick={() => navigate('/conteneurs')}>
+      <button type="button" className="back" onClick={() => navigate(R.conteneurs)}>
         <Icon name="arrow-left" size={15} /> Conteneurs
-      </span>
+      </button>
       <div className="hero">
         <span className="hero-ref">{r.reference}</span>
         <StatutBadge table={STATUTS_ROTATION} valeur={r.statut} />
@@ -81,7 +85,7 @@ export default function ConteneurDetailPage() {
                 <tbody>
                   {r.colis.map((c) => (
                     <tr key={c.id}>
-                      <td className="mono"><a onClick={() => navigate(`/colis/${c.id}`)} style={{ cursor: 'pointer' }}>{c.reference}</a></td>
+                      <td className="mono"><Link to={`${D.colis}/${c.id}`}>{c.reference}</Link></td>
                       <td>{c.expediteurNom}</td>
                       <td>{c.destinataireNom}</td>
                       <td className="small">{c.villeArrivee?.nom ?? '—'}</td>
@@ -145,7 +149,7 @@ export default function ConteneurDetailPage() {
           ]}
           initial={r as never}
           succes="Conteneur mis à jour"
-          onSubmit={async (corps) => { await api.put(`/admin/rotations/${r.id}`, corps); invalider('rotations'); }}
+          onSubmit={async (corps, { version }) => { await api.put(`/admin/rotations/${r.id}`, corps, avecVersion(version)); invalider('rotations'); }}
           onClose={() => setEdition(null)}
         />
       )}
@@ -181,14 +185,16 @@ function DialogueChargement({ rotation, onClose }: { rotation: Rotation; onClose
   const [choix, setChoix] = useState<string[]>([]);
   const q = useQuery({
     queryKey: ['embarquables', rotation.paysDepart, rotation.paysArrivee],
-    queryFn: () =>
-      api.get<{ colis: Colis[] }>('/admin/rotations/embarquables', {
-        paysDepart: rotation.paysDepart, paysArrivee: rotation.paysArrivee, limit: 100,
+    // Tous les colis prêts (pages successives) : rien ne reste invisible au-delà de 100
+    queryFn: async () => ({
+      colis: await toutesLesPages<Colis>('/admin/rotations/embarquables', 'colis', {
+        paysDepart: rotation.paysDepart, paysArrivee: rotation.paysArrivee,
       }),
+    }),
   });
   const a = useAction(
     () => api.post<{ charges: unknown[]; refuses: { reference?: string; motif?: string }[] }>(`/admin/rotations/${rotation.id}/colis`, { colisIds: choix }),
-    { invalider: ['rotations', 'colis'] }
+    { invalider: ['rotations', 'colis', 'embarquables'] }
   );
   const basculer = (id: string) => setChoix((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
 
@@ -210,13 +216,13 @@ function DialogueChargement({ rotation, onClose }: { rotation: Rotation; onClose
     }>
       <p className="small muted" style={{ marginBottom: 10 }}>Colis réceptionnés sur ce trajet et pas encore affectés à un conteneur.</p>
       <ErrorBox error={q.error} />
-      {q.isLoading ? <Loader /> : !q.data?.colis.length ? <Empty>Aucun colis prêt à embarquer</Empty> : (
+      {q.isLoading ? <Loader /> : q.error ? null : !q.data?.colis.length ? <Empty>Aucun colis prêt à embarquer</Empty> : (
         <div className="table-wrap">
           <table>
             <thead><tr><th /><th>Référence</th><th>Destinataire</th><th>Destination</th><th>Poids</th><th>Statut</th></tr></thead>
             <tbody>
               {q.data.colis.map((c) => (
-                <tr key={c.id} className="cliquable" onClick={() => basculer(c.id)}>
+                <tr key={c.id} className="cliquable" {...ligneCliquable(() => basculer(c.id))}>
                   <td><input type="checkbox" readOnly checked={choix.includes(c.id)} /></td>
                   <td className="mono">{c.reference}</td>
                   <td>{c.destinataireNom}</td>

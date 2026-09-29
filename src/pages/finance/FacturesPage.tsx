@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Facture, Liste } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
+import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast, ligneCliquable } from '@/components/ui';
 import { TYPES_FACTURE } from '@/lib/labels';
 
 interface StatsFactures {
@@ -13,6 +13,7 @@ interface StatsFactures {
 import { STATUTS_FACTURE } from '@/lib/labels';
 import { date, montant, nomComplet, telecharger } from '@/lib/format';
 import { useAction, useFiltres } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 export default function FacturesPage() {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ export default function FacturesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.factures.length ? <Empty>Aucune facture</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.factures.length ? <Empty>Aucune facture</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -95,7 +96,7 @@ export default function FacturesPage() {
               </thead>
               <tbody>
                 {q.data.factures.map((f) => (
-                  <tr key={f.id} className="cliquable" onClick={() => navigate(`/factures/${f.id}`)}>
+                  <tr key={f.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.facture}/${f.id}`))}>
                     <td className="mono">{f.reference}</td>
                     <td>{f.User?.raisonSociale || nomComplet(f.User)}</td>
                     <td className="mono">{f.colis?.reference ?? '—'}</td>

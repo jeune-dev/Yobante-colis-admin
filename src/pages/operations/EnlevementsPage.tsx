@@ -7,9 +7,10 @@ import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
 import { Badge, Card, Chips, Empty, ErrorBox, KV, Loader, Modal, Pagination, StatutBadge } from '@/components/ui';
 import { CRENEAUX, OPTIONS_PAYS, PAYS, STATUTS_ENLEVEMENT, libelle } from '@/lib/labels';
-import { date, dateHeure, montant, nomComplet } from '@/lib/format';
+import { aujourdhui, date, dateHeure, montant, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useCoursiersOptions, usePointsOptions } from '@/lib/options';
+import { D } from '@/lib/routes';
 
 export interface Enlevement {
   id: string;
@@ -105,7 +106,7 @@ export default function EnlevementsPage() {
 
           <ErrorBox error={q.error} />
           <Card flush>
-            {q.isLoading ? <Loader /> : !q.data?.demandes.length ? <Empty>Aucune demande d'enlèvement</Empty> : (
+            {q.isLoading ? <Loader /> : q.error ? null : !q.data?.demandes.length ? <Empty>Aucune demande d'enlèvement</Empty> : (
               <div className="table-wrap">
                 <table>
                   <thead><tr><th>Référence</th><th>Contact</th><th>Adresse</th><th>Souhaité</th><th>Colis</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
@@ -142,7 +143,7 @@ export default function EnlevementsPage() {
 function FeuilleDeRoute({ actions }: { actions: (d: Enlevement) => React.ReactNode }) {
   const [coursierId, setCoursierId] = useState('');
   const [pays, setPays] = useState('SN');
-  const [jour, setJour] = useState(new Date().toISOString().slice(0, 10));
+  const [jour, setJour] = useState(aujourdhui);
   const coursiers = useCoursiersOptions(pays);
 
   const q = useQuery({
@@ -169,7 +170,7 @@ function FeuilleDeRoute({ actions }: { actions: (d: Enlevement) => React.ReactNo
       </div>
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.demandes.length ? <Empty>Aucun enlèvement prévu ce jour-là</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.demandes.length ? <Empty>Aucun enlèvement prévu ce jour-là</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Créneau</th><th>Contact</th><th>Adresse</th><th>Colis</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
@@ -209,7 +210,7 @@ function DialogueDetail({ id, onClose }: { id: string; onClose: () => void }) {
       {!d ? <Loader /> : (
         <div className="kv">
           <KV label="Statut"><StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /></KV>
-          <KV label="Client">{d.client ? <Link to={`/clients/${d.client.id}`}>{nomComplet(d.client)}</Link> : '—'}</KV>
+          <KV label="Client">{d.client ? <Link to={`${D.client}/${d.client.id}`}>{nomComplet(d.client)}</Link> : '—'}</KV>
           <KV label="Contact sur place">{d.contactNom} · {d.contactTelephone}</KV>
           <KV label="Adresse">{d.adresse}{d.complementAdresse && `, ${d.complementAdresse}`} — {d.codePostal} {d.ville?.nom}</KV>
           <KV label="Souhaité">{date(d.dateSouhaitee)} · {libelle(CRENEAUX, d.creneau)}{d.heureSouhaitee && ` (vers ${d.heureSouhaitee})`}</KV>
@@ -219,7 +220,7 @@ function DialogueDetail({ id, onClose }: { id: string; onClose: () => void }) {
           <KV label="Coursier">{d.coursier ? `${nomComplet(d.coursier)} · ${d.coursier.telephone ?? ''}` : '—'}</KV>
           <KV label="Point de dépôt">{d.pointDepot?.nom ?? '—'}</KV>
           <KV label="Frais d'enlèvement">{montant(d.fraisEnlevement, d.pays === 'FR' ? 'EUR' : 'XOF')}</KV>
-          <KV label="Expédition liée">{d.colis ? <Link to={`/colis/${d.colis.id}`}>{d.colis.reference}</Link> : '—'}</KV>
+          <KV label="Expédition liée">{d.colis ? <Link to={`${D.colis}/${d.colis.id}`}>{d.colis.reference}</Link> : '—'}</KV>
           {d.instructions && <KV label="Instructions">{d.instructions}</KV>}
           {d.motifEchec && <KV label="Motif d'échec">{d.motifEchec}</KV>}
           {d.commentaireCoursier && <KV label="Commentaire coursier">{d.commentaireCoursier}</KV>}

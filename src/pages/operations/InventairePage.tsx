@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { Badge, Card, Chips, Empty, ErrorBox, Field, Loader, Stat, toast } from '@/components/ui';
 import { CATEGORIES_COURT, ETATS_MARCHANDISE, libelle } from '@/lib/labels';
 import { ouvrirDocument, telecharger } from '@/lib/format';
-import { useRotationsOptions } from '@/lib/options';
+import { useRotationsOptions, toutesLesPages } from '@/lib/options';
 
 interface Inventaire {
   titre: string;
@@ -21,8 +21,8 @@ export default function InventairePage() {
   const rotations = useRotationsOptions();
   const tournees = useQuery({
     queryKey: ['tournees-collecte', 'options'],
-    queryFn: () => api.get<{ tournees: { id: string; reference: string; titre: string }[] }>('/admin/tournees-collecte', { limit: 100 })
-      .then((r) => r.tournees.map((t) => ({ value: t.id, label: `${t.reference} — ${t.titre}` }))),
+    queryFn: () => toutesLesPages<{ id: string; reference: string; titre: string }>('/admin/tournees-collecte', 'tournees')
+      .then((tournees) => tournees.map((t) => ({ value: t.id, label: `${t.reference} — ${t.titre}` }))),
   });
   const params = source === 'rotation' ? { rotationId: id } : { tourneeCollecteId: id };
 

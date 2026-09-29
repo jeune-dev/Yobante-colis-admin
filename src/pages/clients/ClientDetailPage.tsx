@@ -4,12 +4,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Client, Colis, Liste } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Stat, StatutBadge } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Stat, StatutBadge, ligneCliquable } from '@/components/ui';
 import { CATEGORIES_COURT, PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
-type ClientDetail = Client & { stats: { nbColisEnvoyes: number; nbColisLivres: number; encours: number } };
+type ClientDetail = Client & {
+  stats: { nbColisEnvoyes: number; nbColisLivres: number; encours: number; encoursParDevise?: { devise: string; solde: number }[] };
+};
 
 export default function ClientDetailPage() {
   const { id = '' } = useParams();
@@ -31,13 +34,15 @@ export default function ClientDetailPage() {
     invalider: ['clients'],
   });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const u = q.data!;
 
   return (
     <>
-      <span className="back" onClick={() => navigate(-1)}><Icon name="arrow-left" size={15} /> Retour</span>
+      <button type="button" className="back" onClick={() => navigate(-1)}><Icon name="arrow-left" size={15} /> Retour</button>
       <div className="hero">
         <span className="hero-ref" style={{ fontFamily: 'inherit' }}>{nomComplet(u)}</span>
         {u.isActive ? <Badge ton="vert">Actif</Badge> : <Badge ton="rouge">Suspendu</Badge>}
@@ -56,18 +61,21 @@ export default function ClientDetailPage() {
       <div className="stats">
         <Stat icon="package" value={u.stats.nbColisEnvoyes} label="Colis envoyés" />
         <Stat icon="check-circle" ton="vert" value={u.stats.nbColisLivres} label="Colis livrés" />
-        <Stat icon="coins" ton="orange" value={montant(u.stats.encours, u.pays === 'FR' ? 'EUR' : 'XOF')} label="Encours impayé" />
+        <Stat icon="coins" ton="orange" value={u.stats.encoursParDevise?.length ? u.stats.encoursParDevise.map((e) => montant(e.solde, e.devise)).join(' · ') : montant(0, u.pays === 'FR' ? 'EUR' : 'XOF')}
+          label="Reste à payer"
+          hint="Factures en attente ou partiellement payées"
+        />
       </div>
 
       <div className="grid grid-main-side">
         <Card title="Expéditions" flush>
-          {colis.isLoading ? <Loader /> : !colis.data?.colis.length ? <Empty>Aucune expédition</Empty> : (
+          {colis.isLoading ? <Loader /> : colis.error ? <ErrorBox error={colis.error} /> : !colis.data?.colis.length ? <Empty>Aucune expédition</Empty> : (
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Référence</th><th>Cat.</th><th>Destinataire</th><th className="right">Montant</th><th>Statut</th><th>Date</th></tr></thead>
                 <tbody>
                   {colis.data.colis.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
+                    <tr key={c.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.colis}/${c.id}`))}>
                       <td className="mono">{c.reference}</td>
                       <td><Badge ton="bleu">{CATEGORIES_COURT[c.categorie] ?? c.categorie}</Badge></td>
                       <td>{c.destinataireNom}</td>

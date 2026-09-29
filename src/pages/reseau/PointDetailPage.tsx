@@ -5,12 +5,13 @@ import { api } from '@/api/client';
 import type { Num, PaginationInfo } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, KV, Loader, Modal, Pagination, Stat, StatutBadge, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, KV, Loader, Modal, Pagination, Stat, StatutBadge, toast, ligneCliquable } from '@/components/ui';
 import { JOURS, PAYS, SERVICES_POINT, STATUTS_COLIS, TYPES_POINT, libelle } from '@/lib/labels';
-import { date, nomComplet, poids } from '@/lib/format';
+import { date, nomComplet, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import { usePointsOptions } from '@/lib/options';
 import { DialoguePoint, type Point } from './PointsCollectePage';
+import { R, D } from '@/lib/routes';
 
 type Creneau = { debut: string; fin: string };
 type Horaires = Record<string, Creneau[]>;
@@ -71,14 +72,16 @@ export default function PointDetailPage() {
   });
   const supprimer = useAction(() => api.delete(`/admin/points-collecte/${id}`), { succes: 'Point supprimé', invalider: ['points-collecte'] });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const p = q.data!;
   const fermer = () => setDialogue(null);
 
   return (
     <>
-      <span className="back" onClick={() => navigate('/points-collecte')}><Icon name="arrow-left" size={15} /> Points de collecte</span>
+      <button type="button" className="back" onClick={() => navigate(R.pointsCollecte)}><Icon name="arrow-left" size={15} /> Points de collecte</button>
       <div className="hero">
         <span className="hero-ref">{p.code}</span>
         <strong>{p.nom}</strong>
@@ -98,7 +101,7 @@ export default function PointDetailPage() {
           </button>
           <button className="btn danger"
             onClick={() => confirm('Supprimer définitivement ce point ? Refusé si des colis y sont rattachés.') &&
-              supprimer.mutate(undefined, { onSuccess: () => navigate('/points-collecte') })}>
+              supprimer.mutate(undefined, { onSuccess: () => navigate(R.pointsCollecte) })}>
             <Icon name="trash-2" size={15} />
           </button>
         </div>
@@ -115,13 +118,13 @@ export default function PointDetailPage() {
 
       <div className="grid grid-main-side">
         <Card title={`Stock (${stock.data?.pagination.totalItems ?? 0})`} flush>
-          {stock.isLoading ? <Loader /> : !stock.data?.colis.length ? <Empty>Aucun colis présent</Empty> : (
+          {stock.isLoading ? <Loader /> : stock.error ? <ErrorBox error={stock.error} /> : !stock.data?.colis.length ? <Empty>Aucun colis présent</Empty> : (
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Référence</th><th>Destinataire</th><th>Pièces</th><th>Poids</th><th>Statut</th><th>Retrait avant</th></tr></thead>
                 <tbody>
                   {stock.data.colis.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
+                    <tr key={c.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.colis}/${c.id}`))}>
                       <td className="mono">{c.reference}</td>
                       <td>{c.destinataireNom}<div className="muted small">{c.destinataireTelephone}</div></td>
                       <td>{c.nbPieces}</td>
@@ -138,7 +141,7 @@ export default function PointDetailPage() {
         </Card>
 
         <div>
-          {p.photoUrl && <img src={p.photoUrl} alt={p.nom} style={{ width: '100%', borderRadius: 11, marginBottom: '1.2rem', border: '1px solid var(--border)' }} />}
+          {urlSure(p.photoUrl) && <img src={urlSure(p.photoUrl)} alt={p.nom} style={{ width: '100%', borderRadius: 11, marginBottom: '1.2rem', border: '1px solid var(--border)' }} />}
           <Card title="Informations">
             <div className="kv one">
               <KV label="Type">{p.typeLibelle ?? libelle(TYPES_POINT, p.type)}</KV>
@@ -192,7 +195,7 @@ export default function PointDetailPage() {
       {dialogue === 'photo' && (
         <FormModal
           title="Photo du point"
-          champs={[{ name: 'photo', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', required: true }]}
+          champs={[{ name: 'photo', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', maxMo: 5, required: true }]}
           submitLabel="Téléverser"
           succes="Photo mise à jour"
           onSubmit={async (corps) => { await api.upload(`/admin/points-collecte/${id}/photo`, corps); invalider('points-collecte'); }}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
@@ -48,7 +48,7 @@ export default function JoursFeriesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun jour férié</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucun jour férié</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Date</th><th>Libellé</th><th>Pays</th><th>Récurrence</th><th /></tr></thead>
@@ -81,9 +81,9 @@ export default function JoursFeriesPage() {
           champs={CHAMPS}
           initial={edition === 'nouveau' ? { pays: 'SN', recurrent: false } : (edition as never)}
           succes={edition === 'nouveau' ? 'Jour férié ajouté' : 'Jour férié mis à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouveau') await api.post('/admin/jours-feries', corps);
-            else await api.put(`/admin/jours-feries/${edition.id}`, corps);
+            else await api.put(`/admin/jours-feries/${edition.id}`, corps, avecVersion(version));
             invalider('jours-feries');
           }}
           onClose={() => setEdition(null)}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Liste, Personne, PointRef } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -11,6 +11,7 @@ import { date, dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useCoursiersOptions, usePointsOptions, useVillesOptions } from '@/lib/options';
 import { ouvrirDocument } from '@/lib/format';
+import { D } from '@/lib/routes';
 
 interface Tournee {
   id: string;
@@ -80,14 +81,14 @@ export default function TourneesCollectePage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.tournees.length ? <Empty>Aucune tournée</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.tournees.length ? <Empty>Aucune tournée</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Référence</th><th>Tournée</th><th>Date</th><th>Pays</th><th>Inscrits</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
               <tbody>
                 {q.data.tournees.map((t) => (
                   <tr key={t.id}>
-                    <td className="mono"><a style={{ cursor: 'pointer' }} onClick={() => setDetail(t.id)}>{t.reference}</a></td>
+                    <td className="mono"><button type="button" className="lien" onClick={() => setDetail(t.id)}>{t.reference}</button></td>
                     <td><strong>{t.titre}</strong>{t.codesPostaux?.length ? <div className="muted small">CP : {t.codesPostaux.slice(0, 6).join(', ')}{t.codesPostaux.length > 6 ? '…' : ''}</div> : null}</td>
                     <td className="small">{date(t.dateCollecte)}{t.heureDebut && <div className="muted">{t.heureDebut}–{t.heureFin}</div>}</td>
                     <td>{libelle(PAYS, t.pays)}</td>
@@ -168,8 +169,8 @@ function DialogueTournee({ tournee, onClose, onOk }: { tournee: Tournee | null; 
       champs={champs}
       initial={tournee ? (tournee as never) : { pays, afficherBanniere: true }}
       succes={tournee ? 'Tournée mise à jour' : 'Tournée créée : ouvrez-la pour la proposer aux clients'}
-      onSubmit={async (corps) => {
-        if (tournee) await api.put(`/admin/tournees-collecte/${tournee.id}`, corps);
+      onSubmit={async (corps, { version }) => {
+        if (tournee) await api.put(`/admin/tournees-collecte/${tournee.id}`, corps, avecVersion(version));
         else await api.post('/admin/tournees-collecte', corps);
         onOk();
       }}
@@ -225,7 +226,7 @@ function DialogueDetail({ id, onClose }: { id: string; onClose: () => void }) {
           {!t.colis?.length ? <p className="muted small">Aucun colis</p> : (
             <div className="chips">
               {t.colis.map((c) => (
-                <Link key={c.id} to={`/colis/${c.id}`} className="chip">{c.reference} <Badge ton={STATUTS_COLIS[c.statut]?.ton}>{STATUTS_COLIS[c.statut]?.label}</Badge></Link>
+                <Link key={c.id} to={`${D.colis}/${c.id}`} className="chip">{c.reference} <Badge ton={STATUTS_COLIS[c.statut]?.ton}>{STATUTS_COLIS[c.statut]?.label}</Badge></Link>
               ))}
             </div>
           )}

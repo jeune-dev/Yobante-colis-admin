@@ -8,8 +8,9 @@ import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
 import { Card, ErrorBox, KV, Loader, toast } from '@/components/ui';
 import { PAYS, ROLES, libelle } from '@/lib/labels';
-import { dateHeure, initiales, nomComplet } from '@/lib/format';
+import { dateHeure, initiales, nomComplet, urlSure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
+import { R } from '@/lib/routes';
 
 type Profil = Client & {
   avatarUrl?: string;
@@ -52,15 +53,17 @@ export default function ProfilPage() {
     }
   };
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const u = q.data!;
 
   return (
     <>
       <div className="hero">
         {u.avatarUrl
-          ? <img src={u.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }} />
+          ? <img src={urlSure(u.avatarUrl)} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }} />
           : <div className="ava" style={{ width: 56, height: 56, fontSize: '1.1rem' }}>{initiales(u)}</div>}
         <div>
           <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{nomComplet(u)}</div>
@@ -117,7 +120,7 @@ export default function ProfilPage() {
       {dialogue === 'avatar' && (
         <FormModal
           title="Photo de profil"
-          champs={[{ name: 'avatar', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', required: true, full: true }]}
+          champs={[{ name: 'avatar', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', maxMo: 5, required: true, full: true }]}
           submitLabel="Téléverser"
           succes="Photo mise à jour"
           onSubmit={async (corps) => {
@@ -145,7 +148,7 @@ export default function ProfilPage() {
             await api.put('/auth/change-password', { oldPassword: corps.oldPassword, newPassword: corps.newPassword });
             toast.success('Mot de passe modifié : reconnectez-vous');
             clear();
-            navigate('/login');
+            navigate(R.connexion);
           }}
           onClose={() => setDialogue(null)}
         />

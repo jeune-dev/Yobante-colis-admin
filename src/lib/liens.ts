@@ -1,11 +1,13 @@
 /**
  * Les liens des notifications visent les routes de l'API (« /admin/colis/:id ») : on
- * les ramène aux écrans du back-office, qui portent les mêmes chemins sans « /admin ».
+ * les traduit vers les écrans du back-office (« /admin/detail-colis/:id »).
  *
  * Seuls des chemins internes simples sont acceptés (lettres, chiffres, tirets, barres
  * obliques) : « //site », « /\site » ou « javascript: » renvoient null. React Router
  * interprète certains de ces motifs comme des URL externes (open redirect, GHSA-wrjc).
  */
+import { nouvelleAdresse } from './routes';
+
 const CHEMIN_INTERNE = /^\/(?!\/)[A-Za-z0-9_\-/]*$/;
 
 const CORRESPONDANCES: [RegExp, string][] = [
@@ -21,5 +23,6 @@ export const routeDepuisLien = (lien?: string | null): string | null => {
     .replace(/^\/api\/v1/, '')
     .replace(/^\/admin(?=\/|$)/, '');
   const route = CORRESPONDANCES.reduce((c, [re, dest]) => c.replace(re, dest), chemin);
-  return CHEMIN_INTERNE.test(route) ? route : null;
+  // Puis traduction vers l'écran explicite sous /admin (liste ou détail) ; inconnu = null
+  return CHEMIN_INTERNE.test(route) ? nouvelleAdresse(route) : null;
 };

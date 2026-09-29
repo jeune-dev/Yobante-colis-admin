@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -94,7 +94,7 @@ export default function ServicesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun service</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucun service</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Code</th><th>Service</th><th>Mode</th><th>Délai</th><th>Poids</th><th>Coef. vol.</th><th>État</th><th /></tr></thead>
@@ -133,9 +133,9 @@ export default function ServicesPage() {
           champs={CHAMPS}
           initial={edition === 'nouveau' ? DEFAUTS : (edition as never)}
           succes={edition === 'nouveau' ? 'Service créé' : 'Service mis à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouveau') await api.post('/admin/services', corps);
-            else await api.put(`/admin/services/${edition.id}`, corps);
+            else await api.put(`/admin/services/${edition.id}`, corps, avecVersion(version));
             invalider('services');
           }}
           onClose={() => setEdition(null)}

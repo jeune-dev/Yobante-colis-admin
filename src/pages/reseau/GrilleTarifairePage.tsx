@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
 import { CATEGORIES, DEVISES, MODES_TRANSPORT, OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
-import { montant } from '@/lib/format';
+import { montant, urlSure } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 
 interface Article {
@@ -98,7 +98,7 @@ export default function GrilleTarifairePage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun article</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucun article</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th /><th>Code</th><th>Article</th><th>Catégorie</th><th>Mode</th><th>Sens</th><th className="right">Dakar</th><th className="right">Autres régions</th><th>État</th><th /></tr></thead>
@@ -106,7 +106,7 @@ export default function GrilleTarifairePage() {
                 {q.data.map((a) => (
                   <tr key={a.id}>
                     <td style={{ width: 48 }}>
-                      {a.photoUrl ? <img src={a.photoUrl} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} /> : null}
+                      {urlSure(a.photoUrl) ? <img src={urlSure(a.photoUrl)} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} /> : null}
                     </td>
                     <td className="mono">{a.code}</td>
                     <td><strong>{a.libelle}</strong>{a.description && <div className="muted small">{a.description}</div>}</td>
@@ -143,10 +143,10 @@ export default function GrilleTarifairePage() {
             ? { categorie: 'colis_moyen', modeTransport: 'maritime', paysDepart: 'FR', paysArrivee: 'SN', devise: 'EUR', isActive: true }
             : (edition as never)}
           succes={edition === 'nouveau' ? 'Article ajouté à la grille' : 'Article mis à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             const c = { ...corps, code: typeof corps.code === 'string' ? corps.code.toUpperCase() : corps.code };
             if (edition === 'nouveau') await api.post('/admin/articles-tarif', c);
-            else await api.put(`/admin/articles-tarif/${edition.id}`, c);
+            else await api.put(`/admin/articles-tarif/${edition.id}`, c, avecVersion(version));
             invalider('articles-tarif');
           }}
           onClose={() => setEdition(null)}
@@ -155,7 +155,7 @@ export default function GrilleTarifairePage() {
       {photo && (
         <FormModal
           title={`Photo — ${photo.libelle}`}
-          champs={[{ name: 'photo', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', required: true, full: true }]}
+          champs={[{ name: 'photo', label: 'Photo (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', maxMo: 5, required: true, full: true }]}
           submitLabel="Téléverser"
           succes="Photo mise à jour"
           onSubmit={async (corps) => { await api.upload(`/admin/articles-tarif/${photo.id}/photo`, corps); invalider('articles-tarif'); }}

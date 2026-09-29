@@ -2,7 +2,7 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
-import { politiqueSecurite } from './src/lib/csp';
+import { politiqueSecurite } from './src/lib/csp.ts';
 
 const csp = (apiUrl?: string): Plugin => ({
   name: 'yobante-csp',

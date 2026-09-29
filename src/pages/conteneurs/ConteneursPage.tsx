@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Liste, Rotation } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, StatutBadge, toast } from '@/components/ui';
+import { Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, StatutBadge, toast, ligneCliquable } from '@/components/ui';
 import { MODES_TRANSPORT, PAYS, STATUTS_ROTATION, libelle } from '@/lib/labels';
 import { date, poids } from '@/lib/format';
 import { useAction, useFiltres } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 export default function ConteneursPage() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export default function ConteneursPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.rotations.length ? <Empty>Aucun conteneur</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.rotations.length ? <Empty>Aucun conteneur</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -53,7 +54,7 @@ export default function ConteneursPage() {
               </thead>
               <tbody>
                 {q.data.rotations.map((r) => (
-                  <tr key={r.id} className="cliquable" onClick={() => navigate(`/conteneurs/${r.id}`)}>
+                  <tr key={r.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.conteneur}/${r.id}`))}>
                     <td className="mono">{r.reference}</td>
                     <td>{libelle(MODES_TRANSPORT, r.modeTransport)}</td>
                     <td className="small">{libelle(PAYS, r.paysDepart)} → {libelle(PAYS, r.paysArrivee)}</td>
@@ -73,7 +74,7 @@ export default function ConteneursPage() {
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
 
-      {creation && <DialogueCreation onClose={() => setCreation(false)} onCree={(id) => navigate(`/conteneurs/${id}`)} />}
+      {creation && <DialogueCreation onClose={() => setCreation(false)} onCree={(id) => navigate(`${D.conteneur}/${id}`)} />}
     </>
   );
 }

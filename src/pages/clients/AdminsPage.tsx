@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Client, Liste } from '@/api/types';
 import { estSuperAdmin, useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
@@ -69,7 +69,7 @@ export default function AdminsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.administrateurs.length ? <Empty>Aucun administrateur</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.administrateurs.length ? <Empty>Aucun administrateur</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Nom</th><th>Contact</th><th>Rôle</th><th>Dernière connexion</th><th>État</th><th /></tr></thead>
@@ -114,7 +114,7 @@ export default function AdminsPage() {
           champs={CHAMPS_EDITION}
           initial={edition as never}
           succes="Administrateur mis à jour"
-          onSubmit={async (corps) => { await api.put(`/admin/admins/${edition.id}`, corps); invalider('admins'); }}
+          onSubmit={async (corps, { version }) => { await api.put(`/admin/admins/${edition.id}`, corps, avecVersion(version)); invalider('admins'); }}
           onClose={() => setEdition(null)}
         />
       )}

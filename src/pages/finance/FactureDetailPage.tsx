@@ -8,6 +8,7 @@ import { Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/
 import { METHODES_PAIEMENT, STATUTS_FACTURE, STATUTS_PAIEMENT, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, ouvrirDocument } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 type Dialogue = null | 'paiement' | 'remise' | 'annuler' | 'echeance' | 'avoir';
 
@@ -22,8 +23,10 @@ export default function FactureDetailPage() {
   });
   const relancer = useAction(() => api.post(`/admin/factures/${id}/relance`), { succes: 'Relance envoyée au client' });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const f = q.data!;
   const reste = Number(f.montantTotal) - Number(f.montantPaye);
   const ouverte = ['en_attente', 'partiellement_payee', 'brouillon'].includes(f.statut);
@@ -39,7 +42,7 @@ export default function FactureDetailPage() {
 
   return (
     <>
-      <span className="back" onClick={() => navigate(-1)}><Icon name="arrow-left" size={15} /> Retour</span>
+      <button type="button" className="back" onClick={() => navigate(-1)}><Icon name="arrow-left" size={15} /> Retour</button>
       <div className="hero">
         <span className="hero-ref">{f.reference}</span>
         <StatutBadge table={STATUTS_FACTURE} valeur={f.statut} />
@@ -104,7 +107,7 @@ export default function FactureDetailPage() {
         <Card title="Résumé">
           <div className="kv one">
             <KV label="Client">{f.User ? <>{f.User.raisonSociale || nomComplet(f.User)}<div className="muted small">{f.User.email}</div></> : '—'}</KV>
-            <KV label="Colis">{f.colis ? <Link to={`/colis/${f.colis.id}`}>{f.colis.reference}</Link> : '—'}</KV>
+            <KV label="Colis">{f.colis ? <Link to={`${D.colis}/${f.colis.id}`}>{f.colis.reference}</Link> : '—'}</KV>
             <KV label="Émise le">{date(f.dateEmission ?? f.createdAt)}</KV>
             <KV label="Échéance">{date(f.dateLimitePaiement)}</KV>
             <KV label="Payé">{montant(f.montantPaye, f.devise)}</KV>
@@ -174,7 +177,7 @@ function DialogueSimple({ facture, onClose, titre, chemin, methode, champs, dang
       );
       return api[methode](`/admin/factures/${facture.id}/${chemin}`, corps);
     },
-    { succes: 'Facture mise à jour', invalider: ['factures'] }
+    { succes: 'Facture mise à jour', invalider: ['factures', 'colis', 'paiements'] }
   );
   const valider = () => {
     const manquant = champs.find((c) => c.requis && !valeurs[c.cle]);

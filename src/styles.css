@@ -734,6 +734,32 @@ tr.cliquable:hover td {
   font-size: 0.85rem;
   margin-bottom: 0.8rem;
   cursor: pointer;
+  /* Bouton sans apparence de bouton (retour clavier possible) */
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+/* Action présentée comme un lien (ouvre un détail, change d'étape…) */
+.lien {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+/* Focus visible pour la navigation au clavier */
+.back:focus-visible,
+.lien:focus-visible,
+.stat.cliquable:focus-visible,
+tr.cliquable:focus-visible,
+.bar-row.cliquable:focus-visible,
+.bell-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .hero {
@@ -1416,4 +1442,9 @@ tr.cliquable:hover td {
 
 a.ava {
   color: #fff;
+}
+
+/* La ligne est dans un conteneur à défilement : contour dessiné à l'intérieur */
+tr.cliquable:focus-visible {
+  outline-offset: -2px;
 }

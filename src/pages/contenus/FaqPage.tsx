@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Chips, Empty, ErrorBox, Loader } from '@/components/ui';
@@ -44,7 +44,7 @@ export default function FaqPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune question</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucune question</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>#</th><th>Question</th><th>Rubrique</th><th>État</th><th /></tr></thead>
@@ -82,9 +82,9 @@ export default function FaqPage() {
           champs={CHAMPS}
           initial={edition === 'nouvelle' ? { rubrique: filtres.rubrique || 'general', ordre: 0, isActive: true } : (edition as never)}
           succes={edition === 'nouvelle' ? 'Question ajoutée' : 'Question mise à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/faq', corps);
-            else await api.put(`/admin/faq/${edition.id}`, corps);
+            else await api.put(`/admin/faq/${edition.id}`, corps, avecVersion(version));
             invalider('faq');
           }}
           onClose={() => setEdition(null)}

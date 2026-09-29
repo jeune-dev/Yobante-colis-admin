@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from '@/logo.png';
 import { api } from '@/api/client';
 import { ErrorBox, Field, toast } from '@/components/ui';
+import { R } from '@/lib/routes';
 
 const REGLE_MDP = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,72}$/;
 
@@ -41,7 +42,7 @@ export default function MotDePasseOubliePage() {
     try {
       await api.post('/auth/reset-password', { email, code, newPassword: mdp });
       toast.success('Mot de passe réinitialisé : vous pouvez vous connecter.');
-      navigate('/login');
+      navigate(R.connexion);
     } catch (err) {
       setErreur(err);
     } finally {
@@ -82,8 +83,8 @@ export default function MotDePasseOubliePage() {
           {envoi ? 'Envoi…' : etape === 'email' ? 'Recevoir un code' : 'Réinitialiser'}
         </button>
         <div className="small" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between' }}>
-          <Link to="/login">← Retour à la connexion</Link>
-          {etape === 'code' && <a style={{ cursor: 'pointer' }} onClick={() => setEtape('email')}>Renvoyer un code</a>}
+          <Link to={R.connexion}>← Retour à la connexion</Link>
+          {etape === 'code' && <button type="button" className="lien" onClick={() => setEtape('email')}>Renvoyer un code</button>}
         </div>
       </form>
     </main>

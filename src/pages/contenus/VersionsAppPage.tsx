@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
@@ -57,7 +57,7 @@ export default function VersionsAppPage() {
       </div>
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune configuration de version</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucune configuration de version</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Plateforme</th><th>Dernière</th><th>Minimale</th><th>Mise à jour</th><th>Message</th><th>Modifiée</th><th>État</th><th /></tr></thead>
@@ -94,9 +94,9 @@ export default function VersionsAppPage() {
           champs={CHAMPS}
           initial={edition === 'nouvelle' ? { plateforme: 'android', miseAJourForcee: false, isActive: true } : (edition as never)}
           succes="Configuration enregistrée"
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/app-version', corps);
-            else await api.put(`/admin/app-version/${edition.id}`, corps);
+            else await api.put(`/admin/app-version/${edition.id}`, corps, avecVersion(version));
             invalider('app-version');
           }}
           onClose={() => setEdition(null)}

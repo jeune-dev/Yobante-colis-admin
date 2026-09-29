@@ -8,13 +8,27 @@ import { api } from '@/api/client';
 
 type Option = { value: string; label: string };
 const CINQ_MIN = 5 * 60_000;
+// Le backend plafonne `limit` à 100 : au-delà, les pages suivantes sont chargées pour
+// que les listes de choix restent complètes (borne de sécurité : 20 pages).
+const PAR_PAGE = 100;
+const PAGES_MAX = 20;
+
+export async function toutesLesPages<T>(url: string, cle: string, params: Record<string, unknown> = {}): Promise<T[]> {
+  const lignes: T[] = [];
+  for (let page = 1; page <= PAGES_MAX; page++) {
+    const r = await api.get<Record<string, unknown> & { pagination?: { totalPages: number } }>(url, { ...params, page, limit: PAR_PAGE });
+    lignes.push(...((r[cle] as T[]) ?? []));
+    if (!r.pagination || page >= r.pagination.totalPages) break;
+  }
+  return lignes;
+}
 
 export function useVillesOptions(pays?: string) {
   return useQuery({
     queryKey: ['villes', 'options', pays ?? 'toutes'],
     queryFn: async () => {
-      const r = await api.get<{ villes: { id: string; nom: string; pays: string }[] }>('/admin/villes', { pays, limit: 100 });
-      return r.villes.map<Option>((v) => ({ value: v.id, label: pays ? v.nom : `${v.nom} (${v.pays})` }));
+      const villes = await toutesLesPages<{ id: string; nom: string; pays: string }>('/admin/villes', 'villes', { pays });
+      return villes.map<Option>((v) => ({ value: v.id, label: pays ? v.nom : `${v.nom} (${v.pays})` }));
     },
     staleTime: CINQ_MIN,
   });
@@ -24,10 +38,10 @@ export function usePointsOptions(pays?: string, filtre: Record<string, unknown> 
   return useQuery({
     queryKey: ['points-collecte', 'options', pays ?? 'tous', filtre],
     queryFn: async () => {
-      const r = await api.get<{ points: { id: string; code: string; nom: string; pays: string }[] }>('/admin/points-collecte', {
-        pays, limit: 100, ...filtre,
+      const points = await toutesLesPages<{ id: string; code: string; nom: string; pays: string }>('/admin/points-collecte', 'points', {
+        pays, ...filtre,
       });
-      return r.points.map<Option>((p) => ({ value: p.id, label: `${p.code} — ${p.nom}` }));
+      return points.map<Option>((p) => ({ value: p.id, label: `${p.code} — ${p.nom}` }));
     },
     staleTime: CINQ_MIN,
   });
@@ -37,8 +51,8 @@ export function useZonesOptions(pays?: string) {
   return useQuery({
     queryKey: ['zones', 'options', pays ?? 'toutes'],
     queryFn: async () => {
-      const r = await api.get<{ zones: { id: string; code: string; nom: string; pays: string }[] }>('/admin/zones', { pays, limit: 100 });
-      return r.zones.map<Option>((z) => ({ value: z.id, label: `${z.code} — ${z.nom}` }));
+      const zones = await toutesLesPages<{ id: string; code: string; nom: string; pays: string }>('/admin/zones', 'zones', { pays });
+      return zones.map<Option>((z) => ({ value: z.id, label: `${z.code} — ${z.nom}` }));
     },
     staleTime: CINQ_MIN,
   });
@@ -73,8 +87,8 @@ export function useRotationsOptions(filtre: Record<string, unknown> = {}) {
   return useQuery({
     queryKey: ['rotations', 'options', filtre],
     queryFn: async () => {
-      const r = await api.get<{ rotations: { id: string; reference: string; statut: string }[] }>('/admin/rotations', { limit: 100, ...filtre });
-      return r.rotations.map<Option>((x) => ({ value: x.id, label: x.reference }));
+      const rotations = await toutesLesPages<{ id: string; reference: string; statut: string }>('/admin/rotations', 'rotations', filtre);
+      return rotations.map<Option>((x) => ({ value: x.id, label: x.reference }));
     },
     staleTime: 60_000,
   });

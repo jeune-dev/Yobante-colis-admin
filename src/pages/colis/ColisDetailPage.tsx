@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Colis } from '@/api/types';
 import Icon from '@/components/Icon';
 import { Badge, Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/components/ui';
@@ -10,9 +10,11 @@ import {
 } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, ouvrirDocument, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
+import { usePointsOptions } from '@/lib/options';
 import { FormModal } from '@/components/FormModal';
-import type { PointRef, Personne } from '@/api/types';
+import type { Personne } from '@/api/types';
 import { estAdmin, useAuth } from '@/auth/store';
+import { D } from '@/lib/routes';
 
 type Dialogue =
   | null | 'valider' | 'refuser' | 'proposition' | 'evenement' | 'pesee' | 'note'
@@ -42,8 +44,10 @@ export default function ColisDetailPage() {
     invalider: ['colis'],
   });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const c = q.data!;
   const aEtudier = c.statut === 'en_attente_validation';
   // Une proposition non encore acceptée peut être remplacée ou retirée
@@ -52,9 +56,9 @@ export default function ColisDetailPage() {
 
   return (
     <>
-      <span className="back" onClick={() => navigate(-1)}>
+      <button type="button" className="back" onClick={() => navigate(-1)}>
         <Icon name="arrow-left" size={15} /> Retour
-      </span>
+      </button>
 
       <div className="hero">
         <span className="hero-ref">{c.reference}</span>
@@ -124,12 +128,18 @@ export default function ColisDetailPage() {
               <KV label="Description">{c.description || '—'}</KV>
               <KV label="Point actuel">{c.pointActuel?.nom ?? '—'}</KV>
               <KV label="Conteneur">
-                {c.rotation ? <Link to={`/conteneurs/${c.rotation.id}`}>{c.rotation.reference}</Link> : '—'}
+                {c.rotation ? <Link to={`${D.conteneur}/${c.rotation.id}`}>{c.rotation.reference}</Link> : '—'}
               </KV>
               <KV label="Livraison estimée">{date(c.dateLivraisonEstimee)}</KV>
               <KV label="Code de retrait">
                 {c.codeRetrait ?? '—'}{' '}
-                <button className="btn ghost sm" onClick={() => codeRetrait.mutate()} title="Régénérer">
+                <button
+                  className="btn ghost sm"
+                  disabled={codeRetrait.isPending}
+                  onClick={() => confirm("Générer un nouveau code de retrait ? L'ancien ne sera plus valable.") && codeRetrait.mutate()}
+                  title="Régénérer"
+                  aria-label="Régénérer le code de retrait"
+                >
                   <Icon name="refresh-cw" size={13} />
                 </button>
               </KV>
@@ -153,7 +163,7 @@ export default function ColisDetailPage() {
                 </KV>
                 <KV label="Adresse">{c.adresseDepart || '—'}</KV>
                 <KV label="Compte client">
-                  {c.client ? <Link to={`/clients/${c.client.id}`}>{nomComplet(c.client)}</Link> : '—'}
+                  {c.client ? <Link to={`${D.client}/${c.client.id}`}>{nomComplet(c.client)}</Link> : '—'}
                 </KV>
               </div>
             </Card>
@@ -290,7 +300,7 @@ export default function ColisDetailPage() {
             </div>
             {c.facture && (
               <div style={{ marginTop: 12 }}>
-                <Link to={`/factures/${c.facture.id}`}>Facture {c.facture.reference}</Link>{' '}
+                <Link to={`${D.facture}/${c.facture.id}`}>Facture {c.facture.reference}</Link>{' '}
                 <StatutBadge table={STATUTS_FACTURE} valeur={c.facture.statut} />
               </div>
             )}
@@ -472,7 +482,7 @@ function DialogueEvenement({ colis, onClose }: PropsDialogue) {
     <Modal title="Enregistrer un événement de suivi" onClose={onClose}
       footer={<Pied onClose={onClose} envoi={a.isPending} libelleOk="Enregistrer"
         onOk={() => (codeEvenement ? a.mutate(undefined, { onSuccess: onClose }) : toast.error('Choisissez un événement'))} />}>
-      {codes.isLoading ? <Loader /> : (
+      {codes.isLoading ? <Loader /> : codes.error ? <ErrorBox error={codes.error} /> : (
         <>
           <Field label="Événement">
             <select className="select" value={codeEvenement} onChange={(e) => setCode(e.target.value)}>
@@ -519,7 +529,7 @@ function DialoguePesee({ colis, onClose }: PropsDialogue) {
   const [motif, setMotif] = useState('');
   const a = useAction(
     () => api.post(`/admin/colis/${colis.id}/pesee`, { poidsVerifieKg: Number(poidsVerifieKg), motif: motif || undefined }),
-    { succes: 'Pesée corrigée, tarif recalculé', invalider: ['colis'] }
+    { succes: 'Pesée corrigée, tarif recalculé', invalider: ['colis', 'factures', 'dashboard'] }
   );
   return (
     <Modal title="Corriger la pesée" onClose={onClose}
@@ -577,7 +587,7 @@ function DialogueModifier({ colis, onClose }: PropsDialogue) {
       ]}
       initial={colis as never}
       succes="Expédition mise à jour"
-      onSubmit={async (corps) => { await api.put(`/admin/colis/${colis.id}`, corps); invalider('colis'); }}
+      onSubmit={async (corps, { version }) => { await api.put(`/admin/colis/${colis.id}`, corps, avecVersion(version)); invalider('colis'); }}
       onClose={onClose}
     />
   );
@@ -585,11 +595,8 @@ function DialogueModifier({ colis, onClose }: PropsDialogue) {
 
 function DialoguePointRetrait({ colis, onClose }: PropsDialogue) {
   const invalider = useInvalider();
-  const points = useQuery({
-    queryKey: ['points-collecte', 'options', colis.paysArrivee],
-    queryFn: () =>
-      api.get<{ points: PointRef[] }>('/admin/points-collecte', { pays: colis.paysArrivee, isActive: true, limit: 100 }).then((r) => r.points),
-  });
+  // Tous les points actifs du pays d'arrivée (plusieurs pages si le réseau dépasse 100 points)
+  const points = usePointsOptions(colis.paysArrivee, { isActive: true });
   if (points.isLoading) return null;
   return (
     <FormModal
@@ -597,9 +604,8 @@ function DialoguePointRetrait({ colis, onClose }: PropsDialogue) {
       champs={[
         {
           name: 'pointRetraitId', label: 'Nouveau point', type: 'select', required: true, full: true,
-          options: (points.data ?? [])
-            .filter((p) => p.id !== colis.pointRetrait?.id)
-            .map((p) => ({ value: p.id, label: `${p.code} — ${p.nom}` })),
+          options: (points.data ?? []).filter((p) => p.value !== colis.pointRetrait?.id),
+          hint: points.error ? 'Impossible de charger les points de retrait' : undefined,
         },
         { name: 'motif', label: 'Motif', full: true },
       ]}
@@ -638,7 +644,7 @@ function DialogueCoursier({ colis, onClose }: PropsDialogue) {
         {
           name: 'coursierId', label: `Coursier (${libelle(PAYS, pays)})`, type: 'select', required: true, full: true,
           options: (coursiers.data ?? []).map((p) => ({ value: p.id, label: `${nomComplet(p)}${p.telephone ? ` · ${p.telephone}` : ''}` })),
-          hint: coursiers.isLoading ? 'Chargement…' : !coursiers.data?.length ? 'Aucun coursier disponible dans ce pays' : undefined,
+          hint: coursiers.isLoading ? 'Chargement…' : coursiers.error ? 'Impossible de charger les coursiers' : !coursiers.data?.length ? 'Aucun coursier disponible dans ce pays' : undefined,
         },
       ]}
       succes="Coursier affecté"

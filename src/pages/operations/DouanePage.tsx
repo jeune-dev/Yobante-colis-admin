@@ -2,10 +2,11 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Liste, Num } from '@/api/types';
-import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge } from '@/components/ui';
+import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, ligneCliquable } from '@/components/ui';
 import { INCOTERMS, OPTIONS_PAYS, PAYS, STATUTS_DOUANE, TYPES_CONTENU, libelle } from '@/lib/labels';
 import { date, montant } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 export interface Declaration {
   id: string;
@@ -104,13 +105,13 @@ export default function DouanePage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.declarations.length ? <Empty>Aucune déclaration</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.declarations.length ? <Empty>Aucune déclaration</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Colis</th><th>N° déclaration</th><th>Sens</th><th>Nature</th><th>Incoterm</th><th className="right">Valeur</th><th className="right">Droits + taxes est.</th><th>Statut</th><th>Créée le</th></tr></thead>
               <tbody>
                 {q.data.declarations.map((d) => (
-                  <tr key={d.id} className="cliquable" onClick={() => navigate(`/douane/${d.id}`)}>
+                  <tr key={d.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.douane}/${d.id}`))}>
                     <td className="mono">{d.colis?.reference ?? '—'}</td>
                     <td className="small">{d.numeroDeclaration || '—'}</td>
                     <td className="small">{libelle(PAYS, d.paysExport)} → {libelle(PAYS, d.paysImport)}</td>

@@ -8,6 +8,7 @@ import { FormModal } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader, Modal, Pagination, SearchInput, Stat } from '@/components/ui';
 import { date, montant, nomComplet } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 interface Parrain {
   id: string;
@@ -50,14 +51,14 @@ export default function ParrainagePage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.parrains.length ? <Empty>Aucun parrain</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.parrains.length ? <Empty>Aucun parrain</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Parrain</th><th>Contact</th><th>Code</th><th>Filleuls</th><th className="right">Crédit</th><th /></tr></thead>
               <tbody>
                 {q.data.parrains.map((p) => (
                   <tr key={p.id}>
-                    <td><Link to={`/clients/${p.id}`}>{nomComplet(p)}</Link></td>
+                    <td><Link to={`${D.client}/${p.id}`}>{nomComplet(p)}</Link></td>
                     <td className="small">{p.email}<div className="muted">{p.telephone}</div></td>
                     <td className="mono">{p.codeParrainage}</td>
                     <td>{Number(p.nbFilleuls)}</td>
@@ -107,13 +108,13 @@ function DialogueFilleuls({ parrain, onClose }: { parrain: Parrain; onClose: () 
   return (
     <Modal title={`Filleuls de ${nomComplet(parrain)}`} onClose={onClose} large>
       <ErrorBox error={q.error} />
-      {q.isLoading ? <Loader /> : !q.data?.filleuls.length ? <Empty>Aucun filleul</Empty> : (
+      {q.isLoading ? <Loader /> : q.error ? null : !q.data?.filleuls.length ? <Empty>Aucun filleul</Empty> : (
         <table>
           <thead><tr><th>Filleul</th><th>Email</th><th>Inscrit le</th><th>Récompense</th></tr></thead>
           <tbody>
             {q.data.filleuls.map((f) => (
               <tr key={f.id}>
-                <td><Link to={`/clients/${f.id}`}>{nomComplet(f)}</Link></td>
+                <td><Link to={`${D.client}/${f.id}`}>{nomComplet(f)}</Link></td>
                 <td className="small">{f.email}</td>
                 <td className="small muted">{date(f.createdAt)}</td>
                 <td>{f.parrainageRecompense ? <Badge ton="vert">Versée</Badge> : <Badge>En attente</Badge>}</td>

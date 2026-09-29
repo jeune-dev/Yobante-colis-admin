@@ -2,10 +2,11 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Client, Liste } from '@/api/types';
-import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput, ligneCliquable } from '@/components/ui';
 import { PAYS, libelle } from '@/lib/labels';
 import { date, nomComplet } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export default function ClientsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.utilisateurs.length ? <Empty>Aucun client</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.utilisateurs.length ? <Empty>Aucun client</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -48,7 +49,7 @@ export default function ClientsPage() {
               </thead>
               <tbody>
                 {q.data.utilisateurs.map((u) => (
-                  <tr key={u.id} className="cliquable" onClick={() => navigate(`/clients/${u.id}`)}>
+                  <tr key={u.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.client}/${u.id}`))}>
                     <td>
                       <strong>{nomComplet(u)}</strong>
                       {u.raisonSociale && <div className="muted small">{u.raisonSociale}</div>}

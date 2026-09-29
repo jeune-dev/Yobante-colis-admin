@@ -2,15 +2,16 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Liste, Reclamation } from '@/api/types';
-import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge } from '@/components/ui';
+import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, ligneCliquable } from '@/components/ui';
 import { PRIORITES, STATUTS_RECLAMATION, TYPES_RECLAMATION, libelle } from '@/lib/labels';
 import { date, nomComplet, montant } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 interface Statistiques {
   parStatut: { statut: string; total: number }[];
   parType: { type: string; total: number }[];
-  indemnisations: { nombre: number; montantTotal: number };
+  indemnisations: { nombre: number; montantTotal: number; parDevise?: { devise: string; montantTotal: number }[] };
   satisfactionMoyenne: number | null;
 }
 
@@ -49,7 +50,9 @@ export default function ReclamationsPage() {
         <Stat icon="coins" ton="violet"
           value={stats.data ? stats.data.indemnisations.nombre : '—'}
           label="Indemnisations"
-          hint={stats.data ? `Total ${stats.data.indemnisations.montantTotal.toLocaleString('fr-FR')}` : undefined} />
+          hint={stats.data?.indemnisations.parDevise?.length
+            ? `Total ${stats.data.indemnisations.parDevise.map((d) => montant(d.montantTotal, d.devise)).join(' · ')}`
+            : undefined} />
         <Stat icon="star" ton="cyan"
           value={stats.data?.satisfactionMoyenne != null ? `${stats.data.satisfactionMoyenne.toFixed(1)} / 5` : '—'}
           label="Satisfaction moyenne" />
@@ -74,7 +77,7 @@ export default function ReclamationsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.reclamations.length ? <Empty>Aucune réclamation</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.reclamations.length ? <Empty>Aucune réclamation</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>
@@ -82,7 +85,7 @@ export default function ReclamationsPage() {
               </thead>
               <tbody>
                 {q.data.reclamations.map((r) => (
-                  <tr key={r.id} className="cliquable" onClick={() => navigate(`/reclamations/${r.id}`)}>
+                  <tr key={r.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.reclamation}/${r.id}`))}>
                     <td className="mono">{r.reference}</td>
                     <td>{r.objet}</td>
                     <td className="small">{libelle(TYPES_RECLAMATION, r.type)}</td>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Card, Empty, ErrorBox, KV, Loader, StatutBadge, toast } from '@/components/ui';
@@ -11,6 +11,7 @@ import {
 import { dateHeure, montant, ouvrirDocument, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import type { ArticleDouane, Declaration } from './DouanePage';
+import { R, D } from '@/lib/routes';
 
 type Dialogue = null | 'modifier' | 'statut' | 'article' | 'document';
 
@@ -42,8 +43,10 @@ export default function DouaneDetailPage() {
     invalider: ['douane'],
   });
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
   const d = q.data!;
   const fermer = () => setDialogue(null);
   const imprimer = async () => {
@@ -56,7 +59,7 @@ export default function DouaneDetailPage() {
 
   return (
     <>
-      <span className="back" onClick={() => navigate('/douane')}><Icon name="arrow-left" size={15} /> Douane</span>
+      <button type="button" className="back" onClick={() => navigate(R.douane)}><Icon name="arrow-left" size={15} /> Douane</button>
       <div className="hero">
         <span className="hero-ref">{d.colis?.reference ?? 'Déclaration'}</span>
         <StatutBadge table={STATUTS_DOUANE} valeur={d.statut} />
@@ -119,7 +122,7 @@ export default function DouaneDetailPage() {
 
         <Card title="Déclaration">
           <div className="kv one">
-            <KV label="Colis">{d.colis ? <Link to={`/colis/${d.colis.id}`}>{d.colis.reference}</Link> : '—'}</KV>
+            <KV label="Colis">{d.colis ? <Link to={`${D.colis}/${d.colis.id}`}>{d.colis.reference}</Link> : '—'}</KV>
             <KV label="Sens">{libelle(PAYS, d.paysExport)} → {libelle(PAYS, d.paysImport)}</KV>
             <KV label="Nature">{libelle(TYPES_CONTENU, d.motifExport)}</KV>
             <KV label="Incoterm">{libelle(INCOTERMS, d.incoterm)}</KV>
@@ -153,7 +156,7 @@ export default function DouaneDetailPage() {
           ]}
           initial={d as never}
           succes="Déclaration mise à jour"
-          onSubmit={async (corps) => { await api.put(`/admin/douane/${id}`, corps); invalider('douane'); }}
+          onSubmit={async (corps, { version }) => { await api.put(`/admin/douane/${id}`, corps, avecVersion(version)); invalider('douane'); }}
           onClose={fermer}
         />
       )}

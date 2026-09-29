@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Field, Modal, toast } from './ui';
 
 /**
@@ -26,6 +26,30 @@ export interface ChampDef {
   visible?: (v: Valeurs) => boolean;
   disabled?: boolean;
   accept?: string;
+  /** Taille maximale par fichier, en Mo (10 par défaut, comme le backend). */
+  maxMo?: number;
+}
+
+const ACCEPT_DEFAUT = 'image/jpeg,image/png,application/pdf';
+
+/**
+ * Contrôle des fichiers avant envoi : type déclaré par le navigateur et taille.
+ * Simple confort (évite un téléversement de 10 Mo voué à l'échec) : le type réel est
+ * vérifié par le backend, seul fiable — `File.type` dérive de l'extension.
+ */
+export function verifierFichiers(c: ChampDef, valeur: unknown): string | null {
+  const fichiers = (Array.isArray(valeur) ? valeur : valeur ? [valeur] : []).filter((f): f is File => f instanceof File);
+  const types = (c.accept ?? ACCEPT_DEFAUT).split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+  const maxOctets = (c.maxMo ?? 10) * 1024 * 1024;
+  for (const f of fichiers) {
+    const type = f.type.toLowerCase();
+    const accepte = types.some((t) =>
+      t.startsWith('.') ? f.name.toLowerCase().endsWith(t) : t.endsWith('/*') ? type.startsWith(t.slice(0, -1)) : type === t
+    );
+    if (!accepte) return `« ${f.name} » : format non accepté`;
+    if (f.size > maxOctets) return `« ${f.name} » dépasse ${c.maxMo ?? 10} Mo`;
+  }
+  return null;
 }
 
 export type Valeurs = Record<string, unknown>;
@@ -55,6 +79,8 @@ const versApi = (c: ChampDef, saisie: unknown, initiale: unknown): unknown => {
   if (c.type === 'checkbox' || c.type === 'multiselect' || c.type === 'file' || c.type === 'files')
     return saisie ?? undefined;
   const s = String(saisie ?? '').trim();
+  // Liste vidée : tableau vide (les schémas Joi `Joi.array()` refusent null)
+  if (s === '' && c.type === 'tags') return initiale !== null && initiale !== undefined ? [] : undefined;
   if (s === '') return initiale !== null && initiale !== undefined && initiale !== '' ? null : undefined;
   if (c.type === 'number') return Number(s);
   if (c.type === 'tags') return s.split(',').map((x) => x.trim()).filter(Boolean);
@@ -77,12 +103,15 @@ export function ChampSaisie({
   c,
   valeur,
   onChange,
+  id,
 }: {
   c: ChampDef;
   valeur: unknown;
   onChange: (v: unknown) => void;
+  /** Transmis par <Field> pour associer le libellé au champ. */
+  id?: string;
 }) {
-  const commun = { disabled: c.disabled, placeholder: c.placeholder };
+  const commun = { id, disabled: c.disabled, placeholder: c.placeholder, required: c.required };
   switch (c.type) {
     case 'textarea':
     case 'json':
@@ -96,7 +125,7 @@ export function ChampSaisie({
       );
     case 'select':
       return (
-        <select className="select" value={String(valeur ?? '')} onChange={(e) => onChange(e.target.value)} disabled={c.disabled}>
+        <select id={id} className="select" value={String(valeur ?? '')} onChange={(e) => onChange(e.target.value)} disabled={c.disabled}>
           {!c.required && <option value="">—</option>}
           {c.required && valeur === '' && <option value="">— Choisir —</option>}
           {listeOptions(c.options).map((o) => (
@@ -107,7 +136,7 @@ export function ChampSaisie({
     case 'multiselect': {
       const choix = (valeur as string[]) ?? [];
       return (
-        <div className="chips">
+        <div className="chips" id={id} role="group">
           {listeOptions(c.options).map((o) => (
             <button
               type="button"
@@ -125,9 +154,10 @@ export function ChampSaisie({
     case 'files':
       return (
         <input
+          id={id}
           className="input"
           type="file"
-          accept={c.accept ?? 'image/jpeg,image/png,application/pdf'}
+          accept={c.accept ?? ACCEPT_DEFAUT}
           multiple={c.type === 'files'}
           onChange={(e) => onChange(c.type === 'files' ? Array.from(e.target.files ?? []) : e.target.files?.[0] ?? null)}
         />
@@ -161,8 +191,8 @@ export function FormModal({
   title: string;
   champs: ChampDef[];
   initial?: Valeurs;
-  /** Reçoit le corps prêt à envoyer. */
-  onSubmit: (corps: Valeurs) => Promise<unknown>;
+  /** Reçoit le corps prêt à envoyer, et la version (`updatedAt`) de la donnée éditée. */
+  onSubmit: (corps: Valeurs, meta: { version?: string }) => Promise<unknown>;
   onClose: () => void;
   submitLabel?: string;
   large?: boolean;
@@ -175,6 +205,8 @@ export function FormModal({
     Object.fromEntries(champs.map((c) => [c.name, versSaisie(c, initial[c.name])]))
   );
   const [envoi, setEnvoi] = useState(false);
+  // Verrou synchrone contre le double clic (l'état `envoi` n'est lu qu'au rendu suivant)
+  const verrou = useRef(false);
 
   const visibles = champs.filter((c) => !c.visible || c.visible(saisies));
 
@@ -185,6 +217,11 @@ export function FormModal({
       return v === '' || v === null || v === undefined || (Array.isArray(v) && !v.length);
     });
     if (manquant) return toast.error(`« ${manquant.label} » est obligatoire`);
+    for (const c of visibles) {
+      if (c.type !== 'file' && c.type !== 'files') continue;
+      const probleme = verifierFichiers(c, saisies[c.name]);
+      if (probleme) return toast.error(probleme);
+    }
 
     let corps: Valeurs;
     try {
@@ -192,14 +229,17 @@ export function FormModal({
     } catch {
       return toast.error('JSON invalide');
     }
+    if (verrou.current) return;
+    verrou.current = true;
     setEnvoi(true);
     try {
-      await onSubmit(corps);
+      await onSubmit(corps, { version: typeof initial.updatedAt === 'string' ? initial.updatedAt : undefined });
       if (succes !== false) toast.success(succes ?? 'Enregistré');
       onClose();
     } catch (e) {
       toast.error(e);
     } finally {
+      verrou.current = false;
       setEnvoi(false);
     }
   };

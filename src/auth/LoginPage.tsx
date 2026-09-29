@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import logo from '@/logo.png';
 import { api } from '@/api/client';
-import { ROLES_ADMIN, useAuth, type Utilisateur } from './store';
+import { estAdmin, useAuth, type Utilisateur } from './store';
 import Icon from '@/components/Icon';
 import { ErrorBox } from '@/components/ui';
+import { R } from '@/lib/routes';
 
 interface LoginResponse {
   accessToken: string;
@@ -14,28 +15,39 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { accessToken, setSession, clear } = useAuth();
+  const location = useLocation();
+  const { accessToken, utilisateur, setSession } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [erreur, setErreur] = useState<unknown>(null);
   const [envoi, setEnvoi] = useState(false);
 
-  if (accessToken) return <Navigate to="/" replace />;
+  // Retour à la page demandée avant la redirection vers la connexion (chemin interne uniquement)
+  const depuis = (location.state as { depuis?: string } | null)?.depuis;
+  const desactive = new URLSearchParams(location.search).get('raison') === 'desactive';
+  const destination = depuis && /^\/(?![/\\])[^\\]*$/.test(depuis) && depuis.startsWith('/admin/') && !depuis.startsWith(R.connexion) ? depuis : R.tableauDeBord;
+
+  if (accessToken && estAdmin(utilisateur)) return <Navigate to={destination} replace />;
 
   const soumettre = async (e: FormEvent) => {
     e.preventDefault();
+    if (envoi) return;
     setErreur(null);
     setEnvoi(true);
     try {
       // Le backend accepte un email ou un numéro de téléphone comme identifiant
       const res = await api.post<LoginResponse>('/auth/login', { identifiant, password });
-      if (!ROLES_ADMIN.includes(res.utilisateur.role)) {
-        clear();
+      if (!estAdmin(res.utilisateur)) {
+        // Le backend a ouvert une session (et posé le cookie de rafraîchissement) :
+        // on la révoque aussitôt plutôt que de la laisser valide dans ce navigateur.
+        await api
+          .post('/auth/logout', { refreshToken: res.refreshToken }, { headers: { Authorization: `Bearer ${res.accessToken}` } })
+          .catch(() => undefined);
         throw new Error("Ce compte n'a pas accès à l'administration.");
       }
       setSession(res.accessToken, res.refreshToken, res.utilisateur);
-      navigate('/', { replace: true });
+      navigate(destination, { replace: true });
     } catch (err) {
       setErreur(err);
     } finally {
@@ -73,6 +85,11 @@ export default function LoginPage() {
               <p>Accédez à votre espace d'administration</p>
             </header>
 
+            {desactive && !erreur && (
+              <div className="alert warn" role="alert">
+                Votre compte a été désactivé : la session a été fermée. Contactez un super administrateur.
+              </div>
+            )}
             <ErrorBox error={erreur} />
 
             <div className="login-field">
@@ -118,7 +135,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <Link to="/mot-de-passe-oublie" className="login-forgot">Mot de passe oublié ?</Link>
+            <Link to={R.motDePasseOublie} className="login-forgot">Mot de passe oublié ?</Link>
 
             <button className="login-submit" disabled={envoi}>
               {envoi ? 'Connexion…' : 'Se connecter'}

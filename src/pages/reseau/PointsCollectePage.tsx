@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Liste, PointRef, VilleRef } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, ligneCliquable } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, SERVICES_POINT, TYPES_POINT, libelle } from '@/lib/labels';
 import { useFiltres, useInvalider } from '@/lib/hooks';
 import { usePointsOptions, useVillesOptions } from '@/lib/options';
 import { champsPoint } from './pointChamps';
+import { D } from '@/lib/routes';
 
 export interface Point extends PointRef {
   type: string;
@@ -94,13 +95,13 @@ export default function PointsCollectePage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.points.length ? <Empty>Aucun point de collecte</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.points.length ? <Empty>Aucun point de collecte</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Code</th><th>Nom</th><th>Type</th><th>Ville</th><th>Prestations</th><th>Stock</th><th>État</th></tr></thead>
               <tbody>
                 {q.data.points.map((p) => (
-                  <tr key={p.id} className="cliquable" onClick={() => navigate(`/points-collecte/${p.id}`)}>
+                  <tr key={p.id} className="cliquable" {...ligneCliquable(() => navigate(`${D.pointCollecte}/${p.id}`))}>
                     <td className="mono">{p.code}</td>
                     <td><strong>{p.nom}</strong><div className="muted small">{p.adresse}</div></td>
                     <td>{libelle(TYPES_POINT, p.type)}</td>
@@ -144,8 +145,8 @@ export function DialoguePoint({ point, onClose, onOk }: { point?: Point; onClose
       initial={point ? (point as never) : { pays, type: 'agence', services: ['depot', 'retrait'], delaiGardeJours: 15, visiblePublic: true, isActive: true }}
       intro={!point && <p className="small muted">Les horaires se règlent ensuite depuis la fiche du point.</p>}
       succes={point ? 'Point mis à jour' : 'Point de collecte créé'}
-      onSubmit={async (corps) => {
-        if (point) await api.put(`/admin/points-collecte/${point.id}`, corps);
+      onSubmit={async (corps, { version }) => {
+        if (point) await api.put(`/admin/points-collecte/${point.id}`, corps, avecVersion(version));
         else await api.post('/admin/points-collecte', corps);
         onOk();
       }}

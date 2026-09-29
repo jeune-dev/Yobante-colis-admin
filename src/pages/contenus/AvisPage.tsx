@@ -9,6 +9,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, Pagination, StatutBadge } from '@
 import { STATUTS_AVIS } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import { D } from '@/lib/routes';
 
 interface Avis {
   id: string;
@@ -56,7 +57,7 @@ export default function AvisPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.avis.length ? <Empty>Aucun avis</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.avis.length ? <Empty>Aucun avis</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Note</th><th>Avis</th><th>Client</th><th>Colis</th><th>Date</th><th>Statut</th><th /></tr></thead>
@@ -70,8 +71,8 @@ export default function AvisPage() {
                       {a.reponse && <div className="small" style={{ marginTop: 4, color: 'var(--primary)' }}>↳ {a.reponse}</div>}
                       {a.motifRejet && <div className="small muted">Rejet : {a.motifRejet}</div>}
                     </td>
-                    <td>{a.client ? <Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link> : '—'}</td>
-                    <td className="mono">{a.colis ? <Link to={`/colis/${a.colis.id}`}>{a.colis.reference}</Link> : '—'}</td>
+                    <td>{a.client ? <Link to={`${D.client}/${a.client.id}`}>{nomComplet(a.client)}</Link> : '—'}</td>
+                    <td className="mono">{a.colis ? <Link to={`${D.colis}/${a.colis.id}`}>{a.colis.reference}</Link> : '—'}</td>
                     <td className="small muted">{dateHeure(a.createdAt)}</td>
                     <td><StatutBadge table={STATUTS_AVIS} valeur={a.statut} /></td>
                     <td>

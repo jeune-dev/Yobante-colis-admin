@@ -36,6 +36,9 @@ export default function ParametresPage() {
 
   const enregistrer = async (liste: Parametre[]) => {
     for (const p of liste) {
+      if (p.type === 'nombre' && (String(brouillon[p.cle] ?? '').trim() === '' || !Number.isFinite(Number(brouillon[p.cle])))) {
+        return toast.error(`« ${p.libelle ?? p.cle} » : nombre attendu`);
+      }
       if (p.type === 'json') {
         try {
           JSON.parse(brouillon[p.cle]);
@@ -75,8 +78,10 @@ export default function ParametresPage() {
     }
   };
 
-  if (q.isLoading) return <Loader />;
-  if (q.error) return <ErrorBox error={q.error} />;
+  // isPending (pas isLoading) : un nouvel essai mis en pause (onglet masqué, hors ligne)
+  // laisse la requête sans donnée ni erreur, et `q.data` serait indéfini
+  if (q.isPending) return <Loader />;
+  if (q.error) return <ErrorBox error={q.error} onRetry={() => q.refetch()} />;
 
   const categories = [...new Set((q.data ?? []).map((p) => p.categorie))];
   const parCategorie = (q.data ?? [])

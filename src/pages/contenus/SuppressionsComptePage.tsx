@@ -43,7 +43,7 @@ export default function SuppressionsComptePage() {
       </div>
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune demande</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucune demande</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Email</th><th>Motif</th><th>Reçue le</th><th>Statut</th><th>Note</th><th /></tr></thead>

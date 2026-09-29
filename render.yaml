@@ -9,13 +9,19 @@ services:
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
     envVars:
-      # URL publique de l'API, préfixe /api/v1 compris. Lue AU BUILD par Vite :
-      # après l'avoir changée, relancer un déploiement (« Save, rebuild, and deploy »).
+      # Vide : le navigateur appelle /api sur le domaine de l'admin, relayé vers le
+      # backend par la règle de réécriture ci-dessous. Même origine = le refresh token
+      # voyage dans le cookie httpOnly du backend et n'est plus stocké en localStorage.
+      # (Lue AU BUILD par Vite : après modification, « Save, rebuild, and deploy ».)
       - key: VITE_API_URL
-        value: https://yobnate-colis-back.onrender.com/api/v1
+        value: ""
       - key: NODE_VERSION
         value: "22"
     routes:
+      # API relayée sous la même origine (doit précéder la règle générale ci-dessous)
+      - type: rewrite
+        source: /api/*
+        destination: https://yobnate-colis-back.onrender.com/api/v1/*
       # Application monopage : toute URL inconnue renvoie index.html (React Router)
       - type: rewrite
         source: /*

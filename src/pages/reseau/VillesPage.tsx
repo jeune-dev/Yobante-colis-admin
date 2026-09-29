@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import type { Liste } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
@@ -82,7 +82,7 @@ export default function VillesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.villes.length ? <Empty>Aucune ville</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.villes.length ? <Empty>Aucune ville</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Ville</th><th>Pays</th><th>Région</th><th>Zone</th><th>Codes postaux</th><th>Services</th><th>État</th><th /></tr></thead>
@@ -130,9 +130,9 @@ export default function VillesPage() {
             ? { pays: 'SN', livraisonDomicileDisponible: true, enlevementDomicileDisponible: true, isActive: true }
             : (edition as never)}
           succes={edition === 'nouvelle' ? 'Ville créée' : 'Ville mise à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/villes', corps);
-            else await api.put(`/admin/villes/${edition.id}`, corps);
+            else await api.put(`/admin/villes/${edition.id}`, corps, avecVersion(version));
             invalider('villes');
           }}
           onClose={() => setEdition(null)}

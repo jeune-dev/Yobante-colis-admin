@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
+import { api, avecVersion } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader, StatutBadge } from '@/components/ui';
 import { EMPLACEMENTS_ANNONCE, NIVEAUX_ANNONCE, libelle } from '@/lib/labels';
-import { dateHeure } from '@/lib/format';
+import { dateHeure, urlSure } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 
 interface Annonce {
@@ -38,6 +38,10 @@ const CHAMPS: ChampDef[] = [
 
 // Les dates saisies en heure locale sont envoyées en ISO (UTC)
 const versIso = (corps: Record<string, unknown>) => {
+  // Le lien est affiché tel quel dans les applications clientes : http(s) uniquement
+  if (typeof corps.lienUrl === 'string' && !/^https?:\/\//i.test(corps.lienUrl)) {
+    throw new Error('Le lien doit commencer par http:// ou https://');
+  }
   for (const k of ['dateDebut', 'dateFin']) {
     if (typeof corps[k] === 'string') corps[k] = new Date(corps[k] as string).toISOString();
   }
@@ -83,14 +87,14 @@ export default function AnnoncesPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune annonce</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.length ? <Empty>Aucune annonce</Empty> : (
           <div className="table-wrap">
             <table>
               <thead><tr><th /><th>Annonce</th><th>Emplacement</th><th>Niveau</th><th>Période</th><th>Priorité</th><th>État</th><th /></tr></thead>
               <tbody>
                 {q.data.map((a) => (
                   <tr key={a.id}>
-                    <td style={{ width: 60 }}>{a.imageUrl && <img src={a.imageUrl} alt="" style={{ width: 52, height: 36, objectFit: 'cover', borderRadius: 6 }} />}</td>
+                    <td style={{ width: 60 }}>{urlSure(a.imageUrl) && <img src={urlSure(a.imageUrl)} alt="" style={{ width: 52, height: 36, objectFit: 'cover', borderRadius: 6 }} />}</td>
                     <td>
                       <strong>{a.titre}</strong>
                       <div className="muted small" style={{ maxWidth: 420 }}>{a.message.length > 140 ? `${a.message.slice(0, 140)}…` : a.message}</div>
@@ -125,9 +129,9 @@ export default function AnnoncesPage() {
           champs={CHAMPS}
           initial={edition === 'nouvelle' ? { emplacement: 'accueil', niveau: 'info', priorite: 0, isActive: true } : (edition as never)}
           succes={edition === 'nouvelle' ? 'Annonce publiée' : 'Annonce mise à jour'}
-          onSubmit={async (corps) => {
+          onSubmit={async (corps, { version }) => {
             if (edition === 'nouvelle') await api.post('/admin/annonces', versIso(corps));
-            else await api.put(`/admin/annonces/${edition.id}`, versIso(corps));
+            else await api.put(`/admin/annonces/${edition.id}`, versIso(corps), avecVersion(version));
             invalider('annonces');
           }}
           onClose={() => setEdition(null)}
@@ -136,7 +140,7 @@ export default function AnnoncesPage() {
       {image && (
         <FormModal
           title={`Image — ${image.titre}`}
-          champs={[{ name: 'image', label: 'Image (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', required: true, full: true }]}
+          champs={[{ name: 'image', label: 'Image (JPEG ou PNG, 5 Mo max.)', type: 'file', accept: 'image/jpeg,image/png', maxMo: 5, required: true, full: true }]}
           submitLabel="Téléverser"
           succes="Image mise à jour"
           onSubmit={async (corps) => { await api.upload(`/admin/annonces/${image.id}/image`, corps); invalider('annonces'); }}

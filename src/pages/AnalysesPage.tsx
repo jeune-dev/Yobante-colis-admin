@@ -6,6 +6,7 @@ import type { Personne } from '@/api/types';
 import { Badge, Card, Chips, Empty, ErrorBox, KV, Loader, Stat } from '@/components/ui';
 import { CATEGORIES, CATEGORIES_COURT, PAYS, libelle } from '@/lib/labels';
 import { montant, nomComplet } from '@/lib/format';
+import { R, D } from '@/lib/routes';
 
 interface Kpis {
   ventes: { devise: string; commandes: number; chiffreAffaires: number; panierMoyen: number; clients: number; revenuParClient: number }[];
@@ -129,7 +130,9 @@ export default function AnalysesPage() {
         <Chips options={PERIODES} value={jours} onChange={setJours} />
       </div>
 
-      <ErrorBox error={kpis.error ?? conversion.error ?? marketing.error ?? evaluations.error} />
+      <ErrorBox
+        error={kpis.error ?? conversion.error ?? marketing.error ?? evaluations.error ?? stock.error ?? pays.error ?? actifs.error ?? departs.error ?? arrivees.error}
+      />
 
       <div className="section-label">Ventes et clients</div>
       {kpis.isLoading ? <Loader /> : k && (
@@ -208,7 +211,7 @@ export default function AnalysesPage() {
       )}
 
       <div className="grid grid-2">
-        <Card title="Avis clients" right={<Link to="/avis" className="small">Modérer</Link>}>
+        <Card title="Avis clients" right={<Link to={R.avis} className="small">Modérer</Link>}>
           {evaluations.isLoading ? <Loader /> : e && (
             <>
               <div className="kv">
@@ -257,7 +260,7 @@ export default function AnalysesPage() {
       <div className="section-label">Réseau et clientèle</div>
       <div className="grid grid-3">
         <Card title="Par pays">
-          {!pays.data ? <Loader /> : pays.data.map((p) => (
+          {pays.isLoading ? <Loader /> : pays.error ? null : !pays.data?.length ? <Empty>Aucune donnée</Empty> : pays.data.map((p) => (
             <div key={p.pays} style={{ marginBottom: 10 }}>
               <strong>{p.libelle}</strong>
               <div className="small muted">
@@ -275,13 +278,14 @@ export default function AnalysesPage() {
       </div>
 
       <Card title="Clients les plus actifs" flush>
-        {!actifs.data?.length ? <Empty>Aucune donnée</Empty> : (
+        {actifs.isLoading ? <Loader /> : actifs.error ? null : !actifs.data?.length ? <Empty>Aucune donnée</Empty> : (
+          <div className="table-wrap">
           <table>
             <thead><tr><th>Client</th><th>Email</th><th>Compte</th><th className="right">Colis</th></tr></thead>
             <tbody>
               {actifs.data.map((a) => (
                 <tr key={a.client.id}>
-                  <td><Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link></td>
+                  <td><Link to={`${D.client}/${a.client.id}`}>{nomComplet(a.client)}</Link></td>
                   <td className="small">{a.client.email}</td>
                   <td>{a.client.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>}</td>
                   <td className="right">{a.nbColis}</td>
@@ -289,6 +293,7 @@ export default function AnalysesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
       <p className="small muted">Pays : {Object.values(PAYS).join(' et ')}. Les indicateurs sont recalculés au plus toutes les minutes par le serveur.</p>

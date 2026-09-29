@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Liste } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Badge, Card, Empty, ErrorBox, Loader, Pagination, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Pagination, toast, ligneCliquable } from '@/components/ui';
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
 import { routeDepuisLien } from '@/lib/liens';
@@ -55,11 +55,11 @@ export default function NotificationsPage() {
       </div>
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.notifications.length ? <Empty>Aucune notification</Empty> : (
+        {q.isLoading ? <Loader /> : q.error ? null : !q.data?.notifications.length ? <Empty>Aucune notification</Empty> : (
           <table>
             <tbody>
               {q.data.notifications.map((n) => (
-                <tr key={n.id} className="cliquable" onClick={() => ouvrir(n)} style={{ fontWeight: n.isRead ? 400 : 600 }}>
+                <tr key={n.id} className="cliquable" {...ligneCliquable(() => ouvrir(n))} style={{ fontWeight: n.isRead ? 400 : 600 }}>
                   <td style={{ width: 14 }}>{!n.isRead && <span className="dot" />}</td>
                   <td>
                     {n.titre} {n.niveau === 'critique' && <Badge ton="rouge">Urgent</Badge>}
@@ -67,7 +67,12 @@ export default function NotificationsPage() {
                   </td>
                   <td className="small muted" style={{ whiteSpace: 'nowrap' }}>{dateHeure(n.createdAt)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <button className="btn ghost sm" title="Supprimer" onClick={() => agir(() => api.delete(`/client/notifications/${n.id}`))}>
+                    <button
+                      className="btn ghost sm"
+                      title="Supprimer"
+                      aria-label="Supprimer la notification"
+                      onClick={() => confirm('Supprimer cette notification ?') && agir(() => api.delete(`/client/notifications/${n.id}`))}
+                    >
                       <Icon name="trash-2" size={14} />
                     </button>
                   </td>
