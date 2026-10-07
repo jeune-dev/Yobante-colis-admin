@@ -28,6 +28,13 @@ const Etoiles = ({ note }: { note: number }) => (
   <span style={{ color: '#d49b00', letterSpacing: 1 }} title={`${note} / 5`}>{'★'.repeat(note)}<span style={{ color: '#ddd' }}>{'★'.repeat(5 - note)}</span></span>
 );
 
+const VIDE: Record<string, string> = {
+  en_attente: 'Aucun avis en attente de modération',
+  publie: 'Aucun avis publié',
+  rejete: 'Aucun avis rejeté',
+  '': 'Aucun avis déposé pour le moment',
+};
+
 export default function AvisPage() {
   const invalider = useInvalider();
   const [moderation, setModeration] = useState<Avis | null>(null);
@@ -56,7 +63,15 @@ export default function AvisPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.avis.length ? <Empty>Aucun avis</Empty> : (
+        {q.isLoading ? <Loader /> : !q.data?.avis.length ? (
+          <Empty>
+            {VIDE[filtres.statut] ?? 'Aucun avis'}
+            {filtres.note && ' avec cette note'}
+            <div className="small" style={{ marginTop: 6 }}>
+              Les avis sont déposés par les clients depuis l'application mobile, puis modérés ici avant publication.
+            </div>
+          </Empty>
+        ) : (
           <div className="table-wrap">
             <table>
               <thead><tr><th>Note</th><th>Avis</th><th>Client</th><th>Colis</th><th>Date</th><th>Statut</th><th /></tr></thead>

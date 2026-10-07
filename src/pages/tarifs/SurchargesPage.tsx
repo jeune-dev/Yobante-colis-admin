@@ -170,7 +170,7 @@ function DialogueSimulation({ onClose }: { onClose: () => void }) {
   };
   return (
     <Modal title="Simuler les surcharges" onClose={onClose} footer={<button className="btn" onClick={simuler}>Simuler</button>}>
-      <div className="form-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="form-row trois">
         <Field label="Fret"><input className="input" type="number" value={f.fret} onChange={(e) => setF({ ...f, fret: e.target.value })} /></Field>
         <Field label="Poids (kg)"><input className="input" type="number" value={f.poidsKg} onChange={(e) => setF({ ...f, poidsKg: e.target.value })} /></Field>
         <Field label="Valeur déclarée"><input className="input" type="number" value={f.valeurDeclaree} onChange={(e) => setF({ ...f, valeurDeclaree: e.target.value })} /></Field>

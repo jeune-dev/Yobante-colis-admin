@@ -276,19 +276,21 @@ export default function AnalysesPage() {
 
       <Card title="Clients les plus actifs" flush>
         {!actifs.data?.length ? <Empty>Aucune donnée</Empty> : (
-          <table>
-            <thead><tr><th>Client</th><th>Email</th><th>Compte</th><th className="right">Colis</th></tr></thead>
-            <tbody>
-              {actifs.data.map((a) => (
-                <tr key={a.client.id}>
-                  <td><Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link></td>
-                  <td className="small">{a.client.email}</td>
-                  <td>{a.client.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>}</td>
-                  <td className="right">{a.nbColis}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Client</th><th>Email</th><th>Compte</th><th className="right">Colis</th></tr></thead>
+              <tbody>
+                {actifs.data.map((a) => (
+                  <tr key={a.client.id}>
+                    <td><Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link></td>
+                    <td className="small">{a.client.email}</td>
+                    <td>{a.client.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>}</td>
+                    <td className="right">{a.nbColis}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
       <p className="small muted">Pays : {Object.values(PAYS).join(' et ')}. Les indicateurs sont recalculés au plus toutes les minutes par le serveur.</p>

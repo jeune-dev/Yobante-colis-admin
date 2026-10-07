@@ -122,7 +122,6 @@ export default function ColisListPage() {
             <Icon name="search" size={15} />
             <input
               className="input"
-              style={{ minWidth: 220 }}
               placeholder="N° de suivi ou de pièce ↵"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
