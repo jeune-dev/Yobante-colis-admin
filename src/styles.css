@@ -484,6 +484,48 @@ tbody tr:last-child td {
   overflow: hidden;
 }
 
+.panneau-json.complet {
+  max-width: none;
+}
+
+.panneau-json-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.55rem;
+  border: 0;
+  border-top: 1px solid var(--gray2);
+  background: var(--white);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panneau-json-plus:hover {
+  background: var(--primary-bg);
+}
+
+.panneau-json-barre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  color: var(--text3);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.panneau-json-note {
+  margin-right: auto;
+  align-self: center;
+  color: var(--text3);
+  font-size: 0.76rem;
+}
+
 .panneau-json-head {
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 import Icon from './Icon';
 import type { Ton } from '@/lib/labels';
@@ -124,14 +124,19 @@ export function Modal({
   footer?: ReactNode;
   large?: boolean;
 }) {
+  const overlay = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    // Avec des modales empilées, Échap ne ferme que celle du dessus
+    const esc = (e: KeyboardEvent) => {
+      const dessus = [...document.querySelectorAll('.overlay')].pop();
+      if (e.key === 'Escape' && dessus === overlay.current) onClose();
+    };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
 
   return (
-    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div ref={overlay} className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`modal${large ? ' large' : ''}`}>
         <div className="modal-head">
           <div className="modal-title">{title}</div>
