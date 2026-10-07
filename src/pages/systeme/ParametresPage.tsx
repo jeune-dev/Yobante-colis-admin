@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { estSuperAdmin, useAuth } from '@/auth/store';
@@ -64,6 +64,31 @@ function lireGrille(valeur: string): Ligne[] | null {
   return Array.isArray(v) && v.every(estObjetPlat) ? v : null;
 }
 
+/** Cadre commun des éditeurs JSON : en-tête (résumé + action principale) puis contenu. */
+function Panneau({ resume, action, children }: { resume: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="panneau-json">
+      <div className="panneau-json-head">
+        <span>{resume}</span>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Boutons « modifier / supprimer » d'une ligne. */
+function ActionsLigne({ onModifier, onSupprimer }: { onModifier: () => void; onSupprimer: () => void }) {
+  return (
+    <td className="panneau-json-actions">
+      <button className="icone-btn" title="Modifier" aria-label="Modifier" onClick={onModifier}><Icon name="pencil" size={14} /></button>
+      <button className="icone-btn danger" title="Supprimer" aria-label="Supprimer" onClick={onSupprimer}><Icon name="trash" size={14} /></button>
+    </td>
+  );
+}
+
+const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+
 /** Édition d'une grille JSON (liste d'objets) en tableau, avec ajout / modification / suppression par formulaire. */
 function GrilleJson({ cle, valeur, editable, onChange }: { cle: string; valeur: string; editable: boolean; onChange: (v: string) => void }) {
   const lignes = lireGrille(valeur) ?? [];
@@ -91,39 +116,39 @@ function GrilleJson({ cle, valeur, editable, onChange }: { cle: string; valeur: 
   };
 
   const formater = (v: Ligne[string] | undefined) =>
-    v === undefined ? '—' : typeof v === 'boolean' ? (v ? 'Oui' : 'Non') : String(v);
+    v === undefined ? '—' : typeof v === 'boolean' ? (v ? 'Oui' : 'Non') : typeof v === 'number' ? v.toLocaleString('fr-FR') : v;
+
+  // La première colonne (seuil) se lit comme un libellé ; les suivantes s'alignent à droite
+  const estNombre = (k: string) => k !== colonnes[0] && typeColonne(k) === 'number';
 
   return (
-    <div>
+    <Panneau
+      resume={pluriel(lignes.length, 'ligne')}
+      action={editable && (
+        <button className="btn secondary sm" disabled={!colonnes.length} onClick={() => setEdition({ index: null })}>
+          <Icon name="plus" size={14} /> Ajouter une ligne
+        </button>
+      )}
+    >
       {lignes.length ? (
-        <table className="grille-json">
+        <table>
           <thead>
             <tr>
-              {colonnes.map((k) => <th key={k}>{libelleColonne(k)}</th>)}
-              {editable && <th style={{ width: 80 }} />}
+              {colonnes.map((k) => <th key={k} className={estNombre(k) ? 'num' : undefined}>{libelleColonne(k)}</th>)}
+              {editable && <th aria-label="Actions" />}
             </tr>
           </thead>
           <tbody>
             {lignes.map((l, i) => (
               <tr key={i}>
-                {colonnes.map((k) => <td key={k}>{formater(l[k])}</td>)}
-                {editable && (
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
-                    <button className="btn ghost sm" title="Modifier" onClick={() => setEdition({ index: i })}><Icon name="pencil" size={14} /></button>
-                    <button className="btn ghost sm" title="Supprimer" onClick={() => ecrire(lignes.filter((_, j) => j !== i))}><Icon name="trash" size={14} /></button>
-                  </td>
-                )}
+                {colonnes.map((k) => <td key={k} className={estNombre(k) ? 'num' : undefined}>{formater(l[k])}</td>)}
+                {editable && <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(lignes.filter((_, j) => j !== i))} />}
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <div className="muted small">Aucune ligne</div>
-      )}
-      {editable && (
-        <button className="btn secondary sm" style={{ marginTop: 8 }} disabled={!colonnes.length} onClick={() => setEdition({ index: null })}>
-          <Icon name="plus" size={14} /> Ajouter
-        </button>
+        <div className="panneau-json-vide">Aucune ligne pour le moment</div>
       )}
       {edition && (
         <FormModal
@@ -139,7 +164,7 @@ function GrilleJson({ cle, valeur, editable, onChange }: { cle: string; valeur: 
           }}
         />
       )}
-    </div>
+    </Panneau>
   );
 }
 
@@ -160,33 +185,30 @@ function ListeJson({ cle, valeur, editable, onChange }: { cle: string; valeur: s
     : { name: 'valeur', label: def.element, required: true, full: true };
 
   return (
-    <div>
+    <Panneau
+      resume={pluriel(liste.length, 'élément')}
+      action={editable && (
+        <button className="btn secondary sm" onClick={() => setEdition({ index: null })}>
+          <Icon name="plus" size={14} /> Ajouter
+        </button>
+      )}
+    >
       {liste.length ? (
-        <table className="grille-json">
+        <table>
           <tbody>
             {liste.map((x, i) => (
               <tr key={i}>
                 <td>
                   {def.options?.[x] ?? x}
-                  {def.options && <span className="mono muted" style={{ fontSize: '0.7rem' }}> {x}</span>}
+                  {def.options && <span className="code-valeur">{x}</span>}
                 </td>
-                {editable && (
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'right', width: 80 }}>
-                    <button className="btn ghost sm" title="Modifier" onClick={() => setEdition({ index: i })}><Icon name="pencil" size={14} /></button>
-                    <button className="btn ghost sm" title="Supprimer" onClick={() => ecrire(liste.filter((_, j) => j !== i))}><Icon name="trash" size={14} /></button>
-                  </td>
-                )}
+                {editable && <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(liste.filter((_, j) => j !== i))} />}
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <div className="muted small">Aucun élément</div>
-      )}
-      {editable && (
-        <button className="btn secondary sm" style={{ marginTop: 8 }} onClick={() => setEdition({ index: null })}>
-          <Icon name="plus" size={14} /> Ajouter
-        </button>
+        <div className="panneau-json-vide">Aucun élément pour le moment</div>
       )}
       {edition && (
         <FormModal
@@ -203,7 +225,7 @@ function ListeJson({ cle, valeur, editable, onChange }: { cle: string; valeur: s
           }}
         />
       )}
-    </div>
+    </Panneau>
   );
 }
 
@@ -218,23 +240,25 @@ function ObjetJson({ cle, titre, valeur, editable, onChange }: { cle: string; ti
     type: typeof objet[k] === 'number' ? 'number' : typeof objet[k] === 'boolean' ? 'checkbox' : k === 'instructions' ? 'textarea' : 'text',
   }));
 
+  const renseignes = cles.filter((k) => objet[k] !== undefined && objet[k] !== '').length;
+
   return (
-    <div>
-      <table className="grille-json">
-        <tbody>
-          {cles.map((k) => (
-            <tr key={k}>
-              <td className="muted" style={{ whiteSpace: 'nowrap' }}>{libelleColonne(k)}</td>
-              <td>{typeof objet[k] === 'boolean' ? (objet[k] ? 'Oui' : 'Non') : String(objet[k] ?? '') || <span className="muted">—</span>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {editable && (
-        <button className="btn secondary sm" style={{ marginTop: 8 }} onClick={() => setOuvert(true)}>
+    <Panneau
+      resume={`${renseignes} / ${cles.length} champs renseignés`}
+      action={editable && (
+        <button className="btn secondary sm" onClick={() => setOuvert(true)}>
           <Icon name="pencil" size={14} /> Modifier
         </button>
       )}
+    >
+      <dl className="panneau-json-kv">
+        {cles.map((k) => (
+          <div key={k}>
+            <dt>{libelleColonne(k)}</dt>
+            <dd>{typeof objet[k] === 'boolean' ? (objet[k] ? 'Oui' : 'Non') : String(objet[k] ?? '') || <span className="muted">Non renseigné</span>}</dd>
+          </div>
+        ))}
+      </dl>
       {ouvert && (
         <FormModal
           title={titre}
@@ -250,7 +274,7 @@ function ObjetJson({ cle, titre, valeur, editable, onChange }: { cle: string; ti
           }}
         />
       )}
-    </div>
+    </Panneau>
   );
 }
 
@@ -351,52 +375,51 @@ export default function ParametresPage() {
 
       {Object.entries(parCategorie).map(([cat, params]) => (
         <Card key={cat} title={cat.charAt(0).toUpperCase() + cat.slice(1)} flush>
-          <div className="table-wrap">
-            <table className="table-empilee">
-              <tbody>
-                {params.map((p) => {
-                  const editable = superAdmin && p.modifiable;
-                  const valeur = brouillon[p.cle] ?? p.valeur;
-                  const change = (v: string) => setBrouillon({ ...brouillon, [p.cle]: v });
-                  const modifie = valeur !== p.valeur;
-                  const json = p.type === 'json' ? lireJson(valeur) : undefined;
-                  return (
-                    <tr key={p.id}>
-                      <td style={{ width: '45%' }}>
-                        <strong>{p.libelle ?? p.cle}</strong>
-                        {modifie && <span className="small" style={{ color: 'var(--gold)' }}> · modifié</span>}
-                        <div className="muted small">{p.description}</div>
-                        <div className="mono muted" style={{ fontSize: '0.7rem' }}>{p.cle}</div>
-                      </td>
-                      <td>
-                        {p.type === 'booleen' ? (
-                          <select className="select" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 160 }}>
-                            <option value="true">Oui</option>
-                            <option value="false">Non</option>
-                          </select>
-                        ) : p.type === 'json' && ((estListeTextes(json) && (json.length || LISTES[p.cle])) || (LISTES[p.cle] && json == null)) ? (
-                          <ListeJson cle={p.cle} valeur={valeur} editable={editable} onChange={change} />
-                        ) : p.type === 'json' && (lireGrille(valeur) || (COLONNES_PAR_CLE[p.cle] && json == null)) ? (
-                          <GrilleJson cle={p.cle} valeur={valeur} editable={editable} onChange={change} />
-                        ) : p.type === 'json' && (estObjetPlat(json) || (CHAMPS_PAR_CLE[p.cle] && json == null)) ? (
-                          <ObjetJson cle={p.cle} titre={p.libelle ?? p.cle} valeur={valeur} editable={editable} onChange={change} />
-                        ) : p.type === 'json' ? (
-                          <textarea className="textarea mono" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} />
-                        ) : (
-                          <input className="input" type={p.type === 'nombre' ? 'number' : 'text'} step="any" disabled={!editable}
-                            value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 320 }} />
-                        )}
-                      </td>
-                      <td style={{ width: 110 }}>
-                        {editable && modifie && (
-                          <button className="btn sm" disabled={envoi} onClick={() => enregistrer([p])}>Enregistrer</button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="param-liste">
+            {params.map((p) => {
+              const editable = superAdmin && p.modifiable;
+              const valeur = brouillon[p.cle] ?? p.valeur;
+              const change = (v: string) => setBrouillon({ ...brouillon, [p.cle]: v });
+              const modifie = valeur !== p.valeur;
+              const json = p.type === 'json' ? lireJson(valeur) : undefined;
+              return (
+                <div key={p.id} className={`param${modifie ? ' modifie' : ''}`}>
+                  <div className="param-info">
+                    <div className="param-libelle">
+                      {p.libelle ?? p.cle}
+                      {modifie && <span className="param-pastille">Modifié</span>}
+                    </div>
+                    {p.description && <div className="param-desc">{p.description}</div>}
+                    <code className="param-cle">{p.cle}</code>
+                  </div>
+                  <div className="param-valeur">
+                    {p.type === 'booleen' ? (
+                      <select className="select" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 160 }}>
+                        <option value="true">Oui</option>
+                        <option value="false">Non</option>
+                      </select>
+                    ) : p.type === 'json' && ((estListeTextes(json) && (json.length || LISTES[p.cle])) || (LISTES[p.cle] && json == null)) ? (
+                      <ListeJson cle={p.cle} valeur={valeur} editable={editable} onChange={change} />
+                    ) : p.type === 'json' && (lireGrille(valeur) || (COLONNES_PAR_CLE[p.cle] && json == null)) ? (
+                      <GrilleJson cle={p.cle} valeur={valeur} editable={editable} onChange={change} />
+                    ) : p.type === 'json' && (estObjetPlat(json) || (CHAMPS_PAR_CLE[p.cle] && json == null)) ? (
+                      <ObjetJson cle={p.cle} titre={p.libelle ?? p.cle} valeur={valeur} editable={editable} onChange={change} />
+                    ) : p.type === 'json' ? (
+                      <textarea className="textarea mono" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} />
+                    ) : (
+                      <input className="input" type={p.type === 'nombre' ? 'number' : 'text'} step="any" disabled={!editable}
+                        value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 320 }} />
+                    )}
+                    {editable && modifie && (
+                      <div className="param-enregistrer">
+                        <button className="btn ghost sm" disabled={envoi} onClick={() => setBrouillon((b) => { const reste = { ...b }; delete reste[p.cle]; return reste; })}>Annuler</button>
+                        <button className="btn sm" disabled={envoi} onClick={() => enregistrer([p])}>Enregistrer</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       ))}

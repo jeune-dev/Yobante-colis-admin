@@ -11,7 +11,10 @@ import '@fontsource/dm-sans/600.css';
 import '@fontsource/dm-sans/700.css';
 import './styles.css';
 
-useAuth.setState({ accessToken: 'x', utilisateur: { id: '1', nom: 'Admin', prenom: 'Super', email: 'a@a', role: 'super_admin' } });
+const session = { accessToken: 'x', utilisateur: { id: '1', nom: 'Admin', prenom: 'Super', email: 'a@a', role: 'super_admin' } } as const;
+useAuth.setState(session);
+// Sans backend, les appels en arrière-plan (cloche…) déconnectent : on garde la session fictive
+useAuth.subscribe((s) => { if (!s.utilisateur) useAuth.setState(session); });
 const p = (cle: string, valeur: string, type: string, categorie: string, libelle: string) => ({ id: cle, cle, valeur, type, categorie, libelle, modifiable: true });
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false, enabled: false } } });
 qc.setQueryData(['parametres'], [
