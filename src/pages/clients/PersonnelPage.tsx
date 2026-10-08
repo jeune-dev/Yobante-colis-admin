@@ -58,7 +58,12 @@ export default function PersonnelPage() {
                     <td><Badge ton={m.role === 'coursier' ? 'cyan' : 'violet'}>{libelle(ROLES, m.role)}</Badge></td>
                     <td className="small">{m.email}<div className="muted">{m.telephone}</div></td>
                     <td>{libelle(PAYS, m.pays)}</td>
-                    <td className="small">{m.pointAffectation?.nom ?? '—'}</td>
+                    <td className="small">
+                      {m.pointAffectation?.nom
+                        ?? (m.role === 'agent_point'
+                          ? <span title="Sans point de rattachement, cet agent ne voit aucun colis"><Badge ton="rouge">Aucun point</Badge></span>
+                          : '—')}
+                    </td>
                     <td className="small muted">{dateHeure(m.lastLoginAt)}</td>
                     <td>
                       <button className="btn ghost sm" onClick={() => setEdition(m)} title="Modifier"><Icon name="pencil" size={14} /></button>{' '}
@@ -160,6 +165,11 @@ function DialogueEdition({ membre, onClose }: { membre: Membre; onClose: () => v
           name: 'pointCollecteId', label: 'Point de collecte', type: 'select', full: true,
           options: (points.data ?? []).map((p) => ({ value: p.id, label: `${p.code} — ${p.nom}` })),
           visible: () => membre.role === 'agent_point',
+          // Sans point, l'agent ne voit aucun colis : le rattachement est obligatoire
+          required: membre.role === 'agent_point',
+          hint: membre.role === 'agent_point' && !points.data?.length
+            ? `Aucun point de collecte en ${libelle(PAYS, membre.pays)} : créez-en un dans Réseau.`
+            : undefined,
         },
       ]}
       initial={{ ...membre, pointCollecteId: membre.pointAffectation?.id ?? (membre as { pointCollecteId?: string }).pointCollecteId }}

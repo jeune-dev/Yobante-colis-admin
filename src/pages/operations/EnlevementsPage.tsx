@@ -241,10 +241,17 @@ function DialoguePlanifier({ demande, onClose }: { demande: Enlevement; onClose:
       intro={<p className="small">Souhaité le {date(demande.dateSouhaitee)} · {libelle(CRENEAUX, demande.creneau)}</p>}
       champs={[
         { name: 'coursierId', label: 'Coursier', type: 'select', options: coursiers.data ?? [], required: true, full: true,
-          hint: !coursiers.data?.length ? 'Aucun coursier disponible dans ce pays' : undefined },
+          hint: coursiers.isError
+            ? `Impossible de charger les coursiers : ${coursiers.error.message}`
+            : !coursiers.data?.length
+              ? `Aucun coursier actif en ${libelle(PAYS, demande.pays)} : ajoutez-en un dans Personnel (pays : ${libelle(PAYS, demande.pays)}).`
+              : undefined },
         { name: 'datePlanifiee', label: 'Date de passage', type: 'date' },
         { name: 'creneau', label: 'Créneau', type: 'select', options: CRENEAUX },
-        { name: 'pointDepotId', label: 'Point de dépôt des colis', type: 'select', options: points.data ?? [], full: true },
+        { name: 'pointDepotId', label: 'Point de dépôt des colis', type: 'select', options: points.data ?? [], full: true,
+          hint: points.isError
+            ? `Impossible de charger les points : ${points.error.message}`
+            : !points.data?.length ? `Aucun point de collecte actif en ${libelle(PAYS, demande.pays)}.` : undefined },
       ]}
       initial={{
         coursierId: demande.coursier?.id,
