@@ -74,7 +74,7 @@ export default function ReclamationsPage() {
 
       <ErrorBox error={q.error} />
       <Card flush>
-        {q.isLoading ? <Loader /> : !q.data?.reclamations.length ? <Empty>Aucune réclamation</Empty> : (
+        {q.isLoading ? <Loader /> : !q.data?.reclamations.length ? <Empty>{vue === 'ouvertes' ? 'Aucune réclamation en cours de traitement — voir « Toutes »' : 'Aucune réclamation'}</Empty> : (
           <div className="table-wrap">
             <table>
               <thead>

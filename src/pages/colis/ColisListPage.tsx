@@ -24,6 +24,7 @@ const CLES_VUES = ['aEtudier', 'etudeEnRetard', 'enRetard', 'enSouffrance', 'san
 interface Statistiques {
   total: number;
   chiffreAffaires: number;
+  parDevise?: { devise: string; total: number; chiffreAffaires: number; panierMoyen: number }[];
   poidsTotalKg: number;
   panierMoyen: number;
   parCorridor: { corridor: string; total: number; poidsKg: number }[];
@@ -94,9 +95,12 @@ export default function ColisListPage() {
     <>
       <div className="stats">
         <Stat icon="package" value={stats.data?.total ?? '—'} label="Colis (sélection)" />
-        <Stat icon="coins" ton="vert" value={stats.data ? stats.data.chiffreAffaires.toLocaleString('fr-FR') : '—'} label="Chiffre d'affaires" hint="Toutes devises confondues" />
+        {!stats.data?.parDevise?.length && <Stat icon="coins" ton="vert" value="—" label="Chiffre d'affaires" />}
+        {stats.data?.parDevise?.map((d) => (
+          <Stat key={d.devise} icon="coins" ton="vert" value={montant(d.chiffreAffaires, d.devise)} label={`Chiffre d'affaires (${d.devise})`}
+            hint={`panier moyen ${montant(d.panierMoyen, d.devise)}`} />
+        ))}
         <Stat icon="scale" ton="violet" value={stats.data ? poids(stats.data.poidsTotalKg) : '—'} label="Poids total" />
-        <Stat icon="shopping-cart" ton="cyan" value={stats.data ? stats.data.panierMoyen.toLocaleString('fr-FR') : '—'} label="Panier moyen" />
       </div>
 
       <div className="toolbar">

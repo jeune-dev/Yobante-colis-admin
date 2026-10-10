@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Liste, Rotation } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, StatutBadge, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, StatutBadge, toast } from '@/components/ui';
 import { MODES_TRANSPORT, PAYS, STATUTS_ROTATION, libelle } from '@/lib/labels';
 import { date, poids } from '@/lib/format';
 import { useAction, useFiltres } from '@/lib/hooks';
@@ -57,7 +57,10 @@ export default function ConteneursPage() {
                     <td className="mono">{r.reference}</td>
                     <td>{libelle(MODES_TRANSPORT, r.modeTransport)}</td>
                     <td className="small">{libelle(PAYS, r.paysDepart)} → {libelle(PAYS, r.paysArrivee)}</td>
-                    <td className="small">{date(r.dateDepartPrevue)}</td>
+                    <td className="small">
+                      {date(r.dateDepartPrevue)}
+                      {r.statut === 'planifie' && r.dateDepartPrevue && new Date(r.dateDepartPrevue) < new Date() && <div><Badge ton="rouge">Départ dépassé</Badge></div>}
+                    </td>
                     <td className="small">{date(r.dateArriveePrevue)}</td>
                     <td className="small">
                       {r.nbColisCharges ?? 0} colis · {poids(r.poidsCharge ?? 0)}

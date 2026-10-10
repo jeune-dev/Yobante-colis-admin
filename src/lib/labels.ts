@@ -337,3 +337,41 @@ export const STATUTS_SUPPRESSION: Record<string, { label: string; ton: Ton }> = 
 };
 
 export const PLATEFORMES: Record<string, string> = { android: 'Android', ios: 'iOS' };
+
+/** Objets du journal d'activité (noms de modèles côté API → libellés). */
+export const ENTITES_JOURNAL: Record<string, string> = {
+  Colis: 'Colis',
+  Facture: 'Facture',
+  Paiement: 'Paiement',
+  User: 'Utilisateur',
+  Rotation: 'Conteneur',
+  Reclamation: 'Réclamation',
+  DemandeEnlevement: 'Enlèvement',
+  PointCollecte: 'Point de collecte',
+  Tarif: 'Tarif',
+  ParametreSysteme: 'Paramètre',
+};
+
+const VERBES_JOURNAL: Record<string, string> = {
+  login: 'Connexion', register: 'Inscription', logout: 'Déconnexion',
+  activate: 'Activation', deactivate: 'Désactivation', create: 'Création', update: 'Modification',
+  delete: 'Suppression', effectue: 'Enlèvement effectué', encaisser: 'Encaissement', rembourser: 'Remboursement',
+  info: 'Information de suivi', refuse: 'Refus', proposer: 'Proposition tarifaire',
+};
+
+/** « admin.personnel.activate » → « Personnel · Activation » (repli : code brut). */
+export function libelleAction(code: string): string {
+  const parties = code.split('.').filter((p) => p !== 'admin');
+  const verbe = VERBES_JOURNAL[parties[parties.length - 1]];
+  if (!verbe) return code;
+  const objet = parties.slice(0, -1).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  return objet ? `${objet} · ${verbe}` : verbe;
+}
+
+/** Rétablit accents et apostrophes sur les libellés saisis en base (« Expedition », « de l enlèvement »). */
+export function corrigerTexte(s?: string | null): string {
+  if (!s) return '';
+  return s
+    .replace(/\bExpedition\b/g, 'Expédition')
+    .replace(/\b([dDlL]|qu|Qu|n|N) (?=[aeiouyhàâéèêîôûAEIOUYH])/g, "$1’");
+}

@@ -99,8 +99,8 @@ export default function FacturesPage() {
                     <td className="mono">{f.reference}</td>
                     <td>{f.User?.raisonSociale || nomComplet(f.User)}</td>
                     <td className="mono">{f.colis?.reference ?? '—'}</td>
-                    <td className="right">{montant(f.montantTotal, f.devise)}</td>
-                    <td className="right">{montant(f.montantPaye, f.devise)}</td>
+                    <td className="right">{f.reference.startsWith('AVO') ? '− ' : ''}{montant(f.montantTotal, f.devise)}</td>
+                    <td className="right">{f.reference.startsWith('AVO') ? <span className="muted">—</span> : montant(f.montantPaye, f.devise)}</td>
                     <td><StatutBadge table={STATUTS_FACTURE} valeur={f.statut} /></td>
                     <td className="small muted">{date(f.dateEmission ?? f.createdAt)}</td>
                     <td className="small muted">{date(f.dateLimitePaiement)}</td>

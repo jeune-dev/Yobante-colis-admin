@@ -67,6 +67,7 @@ export default function DashboardPage() {
   if (stats.error) return <ErrorBox error={stats.error} />;
   const s = stats.data!;
   const etude = kpis.data?.etude;
+  const incidents = s.colis.parStatut.find((p) => p.statut === 'incident')?.total ?? 0;
   const max = Math.max(1, ...s.colis.parStatut.map((p) => p.total));
 
   return (
@@ -75,7 +76,7 @@ export default function DashboardPage() {
         <Stat icon="package" value={s.colis.total} label="Colis au total" hint={`+${s.colis.nouveauxAujourdhui} aujourd'hui · +${s.colis.nouveauxCeMois} ce mois`} onClick={() => navigate('/colis')} />
         <Stat icon="clipboard-list" ton="orange" value={etude?.aEtudier ?? '—'} label="Demandes à étudier" hint={etude ? `${etude.etudeEnRetard} en retard · ${etude.propositionsEnAttente} devis en attente` : undefined} onClick={() => navigate('/colis?aEtudier=true')} />
         <Stat icon="alert-triangle" ton="rouge" value={s.colis.enRetard} label="Colis en retard" hint={`${s.colis.enSouffrance} en souffrance au retrait`} onClick={() => navigate('/colis?enRetard=true')} />
-        <Stat icon="check-circle" ton="vert" value={`${s.colis.tauxLivraison} %`} label="Taux de livraison" />
+        <Stat icon="check-circle" ton="vert" value={`${s.colis.tauxLivraison} %`} label="Taux de livraison" hint="Colis au statut « Livré » / total des colis" />
         <Stat icon="users" ton="violet" value={s.clients.total} label="Clients" hint={`${s.clients.actifs} actifs · +${s.clients.nouveauxCeMois} ce mois`} />
         <Stat icon="coins" ton="cyan" value={s.chiffreAffaires.map((c) => montant(c.encaisse, c.devise)).join(' · ') || '—'} label="Encaissé" />
         <Stat icon="life-buoy" ton="orange" value={s.alertes.reclamationsOuvertes} label="Réclamations ouvertes" />
@@ -126,10 +127,15 @@ export default function DashboardPage() {
 
       <div className="grid grid-3">
         <Card title="Points d'attention" right={<Link className="small" to="/colis?enRetard=true">Tout voir</Link>}>
-          {!attention.data ? <Loader /> : !attention.data.colisEnRetard.length && !attention.data.colisEnSouffrance.length ? (
+          {!attention.data ? <Loader /> : !attention.data.colisEnRetard.length && !attention.data.colisEnSouffrance.length && !incidents ? (
             <div className="muted small">Rien à signaler</div>
           ) : (
             <div className="bars">
+              {incidents > 0 && (
+                <div className="small">
+                  <Badge ton="rouge">Incident</Badge> <Link to="/colis?statut=incident">{incidents} colis en incident</Link>
+                </div>
+              )}
               {attention.data.colisEnRetard.map((c) => (
                 <div key={c.id} className="small">
                   <Badge ton="rouge">Retard</Badge> <Link to={`/colis/${c.id}`} className="mono">{c.reference}</Link>

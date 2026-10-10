@@ -6,7 +6,7 @@ import { FormModal, type ChampDef } from '@/components/FormModal';
 import Icon from '@/components/Icon';
 import { Card, Chips, Empty, ErrorBox, Loader, Modal, toast } from '@/components/ui';
 import { useInvalider } from '@/lib/hooks';
-import { EVENEMENTS_SUIVI } from '@/lib/labels';
+import { EVENEMENTS_SUIVI, corrigerTexte } from '@/lib/labels';
 
 interface Parametre {
   id: string;
@@ -440,7 +440,7 @@ export default function ParametresPage() {
       )}
       <div className="toolbar">
         <Chips
-          options={[{ value: '', label: 'Toutes' }, ...categories.map((c) => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))]}
+          options={[{ value: '', label: 'Toutes' }, ...categories.map((c) => ({ value: c, label: corrigerTexte(c.charAt(0).toUpperCase() + c.slice(1)) }))]}
           value={categorie}
           onChange={setCategorie}
         />
@@ -457,7 +457,7 @@ export default function ParametresPage() {
       {!q.data?.length && <Empty>Aucun paramètre en base : le backend utilise ses valeurs de repli. Utilisez « Créer les paramètres manquants ».</Empty>}
 
       {Object.entries(parCategorie).map(([cat, params]) => (
-        <Card key={cat} title={cat.charAt(0).toUpperCase() + cat.slice(1)} flush>
+        <Card key={cat} title={corrigerTexte(cat.charAt(0).toUpperCase() + cat.slice(1))} flush>
           <div className="param-liste">
             {params.map((p) => {
               const editable = superAdmin && p.modifiable;
@@ -469,10 +469,10 @@ export default function ParametresPage() {
                 <div key={p.id} className={`param${modifie ? ' modifie' : ''}`}>
                   <div className="param-info">
                     <div className="param-libelle">
-                      {p.libelle ?? p.cle}
+                      {corrigerTexte(p.libelle) || p.cle}
                       {modifie && <span className="param-pastille">Modifié</span>}
                     </div>
-                    {p.description && <div className="param-desc">{p.description}</div>}
+                    {p.description && <div className="param-desc">{corrigerTexte(p.description)}</div>}
                     <code className="param-cle">{p.cle}</code>
                   </div>
                   <div className="param-valeur">
@@ -482,11 +482,11 @@ export default function ParametresPage() {
                         <option value="false">Non</option>
                       </select>
                     ) : p.type === 'json' && ((estListeTextes(json) && (json.length || LISTES[p.cle])) || (LISTES[p.cle] && json == null)) ? (
-                      <ListeJson cle={p.cle} titre={p.libelle ?? p.cle} valeur={valeur} editable={editable} onChange={change} />
+                      <ListeJson cle={p.cle} titre={corrigerTexte(p.libelle) || p.cle} valeur={valeur} editable={editable} onChange={change} />
                     ) : p.type === 'json' && (lireGrille(valeur) || (COLONNES_PAR_CLE[p.cle] && json == null)) ? (
-                      <GrilleJson cle={p.cle} titre={p.libelle ?? p.cle} valeur={valeur} editable={editable} onChange={change} />
+                      <GrilleJson cle={p.cle} titre={corrigerTexte(p.libelle) || p.cle} valeur={valeur} editable={editable} onChange={change} />
                     ) : p.type === 'json' && (estObjetPlat(json) || (CHAMPS_PAR_CLE[p.cle] && json == null)) ? (
-                      <ObjetJson cle={p.cle} titre={p.libelle ?? p.cle} valeur={valeur} editable={editable} onChange={change} />
+                      <ObjetJson cle={p.cle} titre={corrigerTexte(p.libelle) || p.cle} valeur={valeur} editable={editable} onChange={change} />
                     ) : p.type === 'json' ? (
                       <textarea className="textarea mono" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} />
                     ) : (
