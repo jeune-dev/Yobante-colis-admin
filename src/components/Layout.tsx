@@ -134,7 +134,7 @@ export default function Layout() {
 
       <div className="main">
         <header className="topbar">
-          <button className="btn ghost sm burger" onClick={() => setOuvert((o) => !o)} aria-label="Menu">
+          <button className="btn ghost sm burger" onClick={() => setOuvert((o) => !o)} aria-label="Menu" aria-expanded={ouvert}>
             <Icon name="grid" size={18} />
           </button>
           <div>

@@ -26,6 +26,18 @@
   --sh: 0 1px 6px rgba(0, 0, 0, 0.06);
   --sb: 250px;
   --font: 'DM Sans', system-ui, sans-serif;
+  /* Zones de sécurité (encoche, Dynamic Island, barre d'accueil) : 0 hors iOS */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  /* Largeur maximale du contenu sur les très grands écrans */
+  --contenu-max: 1640px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -53,6 +65,7 @@ a {
 .app {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .sb {
@@ -64,7 +77,8 @@ a {
   display: flex;
   flex-direction: column;
   z-index: 50;
-  transition: transform 0.2s;
+  padding-left: var(--safe-l);
+  transition: transform 0.2s, visibility 0.2s;
 }
 
 .sb-top {
@@ -98,6 +112,7 @@ a {
 .nav {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.6rem 0.7rem;
 }
 
@@ -133,7 +148,7 @@ a {
 
 .sb-foot {
   border-top: 1px solid var(--border);
-  padding: 0.8rem;
+  padding: 0.8rem 0.8rem calc(0.8rem + var(--safe-b));
 }
 
 .user-pill {
@@ -187,6 +202,7 @@ a {
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
   padding: 0.9rem 1.6rem;
+  padding-right: calc(1.6rem + var(--safe-r));
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -211,31 +227,38 @@ a {
 
 .content {
   padding: 1.4rem 1.6rem 3rem;
+  padding-right: calc(1.6rem + var(--safe-r));
+  padding-bottom: calc(3rem + var(--safe-b));
 }
 
-.burger {
+/* Spécificité renforcée : sinon `.btn` (déclaré plus bas) l'affiche aussi sur desktop */
+.topbar .burger {
   display: none;
 }
 
 @media (max-width: 900px) {
   .sb {
+    width: min(var(--sb), 86vw);
     transform: translateX(-100%);
+    /* Menu fermé : hors écran ET hors de la navigation au clavier */
+    visibility: hidden;
   }
   .sb.open {
     transform: none;
+    visibility: visible;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
   }
   .main {
     margin-left: 0;
   }
-  .burger {
+  .topbar .burger {
     display: inline-flex;
   }
   .content {
-    padding: 1rem;
+    padding: 1rem calc(1rem + var(--safe-r)) calc(2.5rem + var(--safe-b)) calc(1rem + var(--safe-l));
   }
   .topbar {
-    padding: 0.8rem 1rem;
+    padding: 0.8rem calc(1rem + var(--safe-r)) 0.8rem calc(1rem + var(--safe-l));
   }
 }
 
@@ -300,7 +323,8 @@ a {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* 220 px : un montant « 149 175 FCFA » tient sur une ligne à côté de l'icône */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
   margin-bottom: 1.2rem;
 }
@@ -314,6 +338,11 @@ a {
   display: flex;
   gap: 0.8rem;
   align-items: flex-start;
+  min-width: 0;
+}
+
+.stat > div:last-child {
+  min-width: 0;
 }
 
 .stat.cliquable {
@@ -337,6 +366,18 @@ a {
   font-size: 1.45rem;
   font-weight: 700;
   line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* La taille du chiffre suit la largeur réelle de la carte, pas celle de l'écran */
+@supports (container-type: inline-size) {
+  .stat {
+    container-type: inline-size;
+  }
+
+  .stat-value {
+    font-size: clamp(1.1rem, 8.5cqi, 1.45rem);
+  }
 }
 
 .stat-label {
@@ -902,6 +943,8 @@ tr.cliquable:hover td {
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
+  max-height: 90dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
@@ -925,8 +968,11 @@ tr.cliquable:hover td {
 }
 
 .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 1.2rem 1.4rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-foot {
@@ -1134,8 +1180,8 @@ tr.cliquable:hover td {
 
 .toasts {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
+  right: calc(1rem + var(--safe-r));
+  bottom: calc(1rem + var(--safe-b));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1464,19 +1510,95 @@ tr.cliquable:hover td {
     width: 100%;
     min-height: 100svh;
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
     border: 0;
     border-radius: 0;
   }
 
   .login-showcase {
     min-height: 0;
-    padding: 26px 26px 24px;
+    padding: 20px 26px;
   }
 
   .login-mark {
     width: 56px;
     height: 56px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
+    border-radius: 15px;
+  }
+
+  .login-mark img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .login-headline,
+  .login-description,
+  .login-benefits,
+  .login-copyright {
+    display: none;
+  }
+
+  .login-panel {
+    align-items: flex-start;
+    padding: 34px 26px 42px;
+  }
+
+  .login-form {
+    max-width: 440px;
+  }
+}
+
+/* Petit téléphone en paysage : bandeau de marque réduit, formulaire visible */
+@media (max-width: 720px) and (max-height: 500px) {
+  .login-showcase {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .login-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .login-mark img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .login-panel {
+    padding-top: 14px;
+    padding-bottom: 20px;
+  }
+
+  .login-form-heading {
+    margin-bottom: 12px;
+  }
+
+  .login-field {
+    margin-bottom: 10px;
+  }
+}
+
+/* Téléphone en paysage / fenêtre basse : le formulaire tient sans défilement */
+@media (min-width: 721px) and (max-height: 600px) {
+  .login-page {
+    padding: 12px;
+  }
+
+  .login-shell {
+    min-height: 0;
+  }
+
+  .login-showcase {
+    padding: 24px 30px;
+  }
+
+  .login-mark {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 14px;
     border-radius: 15px;
   }
 
@@ -1486,8 +1608,7 @@ tr.cliquable:hover td {
   }
 
   .login-headline {
-    max-width: 500px;
-    font-size: 22px;
+    font-size: 21px;
   }
 
   .login-description {
@@ -1496,25 +1617,16 @@ tr.cliquable:hover td {
   }
 
   .login-benefits {
-    grid-template-columns: 1fr;
-    gap: 7px;
-    margin-top: 14px;
-  }
-
-  .login-benefits li {
-    font-size: 12px;
-  }
-
-  .login-copyright {
-    display: none;
+    gap: 6px;
+    margin-top: 12px;
   }
 
   .login-panel {
-    padding: 34px 26px 42px;
+    padding: 24px clamp(28px, 5vw, 56px);
   }
 
-  .login-form {
-    max-width: 440px;
+  .login-form-heading {
+    margin-bottom: 16px;
   }
 }
 
@@ -1703,11 +1815,11 @@ svg {
   }
 
   .content {
-    padding: 0.75rem 0.75rem 2.5rem;
+    padding: 0.75rem calc(0.75rem + var(--safe-r)) calc(2.5rem + var(--safe-b)) calc(0.75rem + var(--safe-l));
   }
 
   .topbar {
-    padding: 0.6rem 0.75rem;
+    padding: calc(0.6rem + var(--safe-t)) calc(0.75rem + var(--safe-r)) 0.6rem calc(0.75rem + var(--safe-l));
     gap: 0.6rem;
   }
 
@@ -1744,9 +1856,10 @@ svg {
     flex: 1 1 100%;
   }
 
-  .search .input {
+  .search .input,
+  .toolbar .search .input {
     min-width: 0;
-    width: 100%;
+    width: 100% !important;
   }
 
   .toolbar .chips {
@@ -1798,10 +1911,6 @@ svg {
     height: 32px;
   }
 
-  .stat-value {
-    font-size: 1.2rem;
-  }
-
   .grid {
     gap: 0.9rem;
   }
@@ -1841,15 +1950,18 @@ svg {
   .modal,
   .modal.large {
     max-width: none;
-    max-height: 92svh;
+    max-height: 92vh;
+    max-height: 92dvh;
     border-radius: 16px 16px 0 0;
+    /* Barre d'accueil iOS : les boutons du pied restent atteignables */
+    padding-bottom: var(--safe-b);
   }
 
   .modal-head,
   .modal-body,
   .modal-foot {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: calc(1rem + var(--safe-l));
+    padding-right: calc(1rem + var(--safe-r));
   }
 
   .modal-foot .btn {
@@ -1874,17 +1986,17 @@ svg {
 
   .bell-pop {
     position: fixed;
-    top: 3.6rem;
-    left: 0.5rem;
-    right: 0.5rem;
+    top: calc(3.6rem + var(--safe-t));
+    left: calc(0.5rem + var(--safe-l));
+    right: calc(0.5rem + var(--safe-r));
     width: auto;
     max-height: 70svh;
   }
 
   .toasts {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: calc(0.75rem + var(--safe-l));
+    right: calc(0.75rem + var(--safe-r));
+    bottom: calc(0.75rem + var(--safe-b));
   }
 
   .toast {
@@ -1896,20 +2008,82 @@ svg {
   }
 }
 
+/* Petits mobiles : deux cartes par ligne, icône au-dessus du chiffre pour
+   laisser toute la largeur au montant */
+@media (max-width: 480px) {
+  .stat {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
 /* Très petits écrans */
 @media (max-width: 380px) {
-  .stats {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .page-sub {
     display: none;
   }
 }
 
-/* Grands écrans : lignes de texte pas trop étirées */
+@media (max-width: 340px) {
+  .stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat {
+    flex-direction: row;
+  }
+}
+
+/* Grands écrans : contenu centré et borné, bandeau aligné sur le contenu */
 @media (min-width: 1800px) {
   .content {
-    max-width: 1640px;
+    max-width: calc(var(--contenu-max) + 3.2rem);
+    margin-inline: auto;
+  }
+
+  .topbar {
+    padding-inline: max(1.6rem, (100% - var(--contenu-max)) / 2);
+  }
+}
+
+/* Écrans tactiles : cibles d'au moins ~40-44 px pour les actions */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn.sm {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .nav-item {
+    min-height: 44px;
+  }
+
+  .chip {
+    min-height: 36px;
+  }
+
+  .icone-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .login-password-toggle {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb,
+  .spinner {
+    transition: none;
+  }
+
+  .spinner {
+    animation-duration: 2s;
   }
 }
