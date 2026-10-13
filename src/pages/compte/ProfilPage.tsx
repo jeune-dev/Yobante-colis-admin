@@ -58,20 +58,23 @@ export default function ProfilPage() {
 
   return (
     <>
-      <div className="hero">
-        {u.avatarUrl
-          ? <img src={u.avatarUrl} alt="" className="avatar-grand" />
-          : <div className="ava avatar-grand">{initiales(u)}</div>}
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{nomComplet(u)}</div>
-          <div className="muted small">{libelle(ROLES, u.role)}</div>
+      {/* Carte d'identité : bandeau dégradé bleu derrière l'avatar, comme la page de connexion */}
+      <section className="profil-carte" aria-labelledby="profil-nom">
+        <div className="profil-banniere" />
+        <div className="profil-identite">
+          <span className="profil-avatar">
+            {u.avatarUrl ? <img src={u.avatarUrl} alt="" /> : <span className="profil-initiales">{initiales(u)}</span>}
+          </span>
+          <h1 id="profil-nom" className="profil-nom">{nomComplet(u)}</h1>
+          <p className="profil-role">{libelle(ROLES, u.role)}</p>
+          <p className="profil-email">{u.email}</p>
+          <div className="profil-actions">
+            <button className="btn secondary" onClick={() => setDialogue('profil')}><Icon name="pencil" size={15} /> Modifier</button>
+            <button className="btn secondary" onClick={() => setDialogue('avatar')}><Icon name="image" size={15} /> Photo</button>
+            <button className="btn secondary" onClick={() => setDialogue('mdp')}><Icon name="lock" size={15} /> Mot de passe</button>
+          </div>
         </div>
-        <div className="actions">
-          <button className="btn secondary" onClick={() => setDialogue('profil')}><Icon name="pencil" size={15} /> Modifier</button>
-          <button className="btn secondary" onClick={() => setDialogue('avatar')}><Icon name="image" size={15} /> Photo</button>
-          <button className="btn secondary" onClick={() => setDialogue('mdp')}><Icon name="lock" size={15} /> Mot de passe</button>
-        </div>
-      </div>
+      </section>
 
       <div className="grid grid-2">
         <Card title="Informations">
@@ -85,12 +88,17 @@ export default function ProfilPage() {
           </div>
         </Card>
         <Card title="Mes notifications">
-          <p className="small muted" style={{ marginBottom: 10 }}>Canaux par lesquels vous recevez les alertes (délais d'étude dépassés, nouvelles demandes…).</p>
-          {PREFERENCES.map((p) => (
-            <label key={p.cle} className="check">
-              <input type="checkbox" checked={!!u[p.cle]} onChange={(e) => basculer(p.cle, e.target.checked)} /> {p.label}
-            </label>
-          ))}
+          <p className="small muted profil-intro">Canaux par lesquels vous recevez les alertes (délais d'étude dépassés, nouvelles demandes…).</p>
+          <div className="profil-preferences">
+            {PREFERENCES.map((p) => (
+              <label key={p.cle} className="profil-preference">
+                <span>{p.label}</span>
+                {/* Case à cocher native, présentée en interrupteur */}
+                <input type="checkbox" role="switch" className="interrupteur" checked={!!u[p.cle]}
+                  onChange={(e) => basculer(p.cle, e.target.checked)} />
+              </label>
+            ))}
+          </div>
         </Card>
       </div>
 
