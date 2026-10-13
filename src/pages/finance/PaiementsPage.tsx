@@ -74,7 +74,7 @@ export default function PaiementsPage() {
         </select>
         <input className="input" type="date" title="À partir du" value={filtres.dateDebut} onChange={(e) => set('dateDebut', e.target.value)} />
         <input className="input" type="date" title="Jusqu'au" value={filtres.dateFin} onChange={(e) => set('dateFin', e.target.value)} />
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <div className="actions pousser">
           <button className="btn secondary" onClick={() => setCaisse(true)}><Icon name="inbox" size={15} /> Caisse d'un point</button>
           <button className="btn secondary" onClick={exporter}><Icon name="download" size={15} /> CSV</button>
         </div>

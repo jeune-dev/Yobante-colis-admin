@@ -58,7 +58,7 @@ export default function ZonesPage() {
           <option value="">Tous pays</option>
           {Object.entries(OPTIONS_PAYS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouvelle')}>
+        <button className="btn pousser" onClick={() => setEdition('nouvelle')}>
           <Icon name="plus" size={15} /> Nouvelle zone
         </button>
       </div>

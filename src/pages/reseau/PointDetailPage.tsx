@@ -269,9 +269,9 @@ function DialogueHoraires({ point, onClose }: { point: PointDetail; onClose: () 
                   {!h[j].length && <span className="muted small">Fermé</span>}
                   {h[j].map((c, i) => (
                     <span key={i} className="actions" style={{ alignItems: 'center', gap: 4 }}>
-                      <input className="input" type="time" style={{ width: 110 }} value={c.debut} onChange={(e) => maj(j, i, 'debut', e.target.value)} />
+                      <input className="input champ-heure" type="time" value={c.debut} onChange={(e) => maj(j, i, 'debut', e.target.value)} />
                       –
-                      <input className="input" type="time" style={{ width: 110 }} value={c.fin} onChange={(e) => maj(j, i, 'fin', e.target.value)} />
+                      <input className="input champ-heure" type="time" value={c.fin} onChange={(e) => maj(j, i, 'fin', e.target.value)} />
                       <button className="btn ghost sm" onClick={() => setH({ ...h, [j]: h[j].filter((_, k) => k !== i) })}><Icon name="x" size={13} /></button>
                     </span>
                   ))}

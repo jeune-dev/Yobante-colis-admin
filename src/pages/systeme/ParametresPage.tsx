@@ -445,7 +445,7 @@ export default function ParametresPage() {
           onChange={setCategorie}
         />
         {superAdmin && (
-          <div className="actions" style={{ marginLeft: 'auto' }}>
+          <div className="actions pousser">
             <button className="btn secondary" onClick={initialiser}><Icon name="refresh-cw" size={15} /> Créer les paramètres manquants</button>
             <button className="btn" disabled={!modifies.length || envoi} onClick={() => enregistrer(modifies)}>
               Enregistrer {modifies.length ? `(${modifies.length})` : ''}
@@ -477,7 +477,7 @@ export default function ParametresPage() {
                   </div>
                   <div className="param-valeur">
                     {p.type === 'booleen' ? (
-                      <select className="select" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 160 }}>
+                      <select className="select champ-etroit" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)}>
                         <option value="true">Oui</option>
                         <option value="false">Non</option>
                       </select>
@@ -490,8 +490,8 @@ export default function ParametresPage() {
                     ) : p.type === 'json' ? (
                       <textarea className="textarea mono" disabled={!editable} value={valeur} onChange={(e) => change(e.target.value)} />
                     ) : (
-                      <input className="input" type={p.type === 'nombre' ? 'number' : 'text'} step="any" disabled={!editable}
-                        value={valeur} onChange={(e) => change(e.target.value)} style={{ maxWidth: 320 }} />
+                      <input className="input champ-limite" type={p.type === 'nombre' ? 'number' : 'text'} step="any" disabled={!editable}
+                        value={valeur} onChange={(e) => change(e.target.value)} />
                     )}
                     {editable && modifie && (
                       <div className="param-enregistrer">

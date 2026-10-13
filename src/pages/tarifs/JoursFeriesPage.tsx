@@ -39,8 +39,8 @@ export default function JoursFeriesPage() {
           <option value="">Tous pays</option>
           {Object.entries(OPTIONS_PAYS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <input className="input" type="number" style={{ width: 120 }} value={filtres.annee} onChange={(e) => set('annee', e.target.value)} placeholder="Année" />
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <input className="input champ-etroit" type="number" value={filtres.annee} onChange={(e) => set('annee', e.target.value)} placeholder="Année" />
+        <div className="actions pousser">
           <button className="btn secondary" onClick={() => setImports(true)}><Icon name="download" size={15} /> Importer un calendrier</button>
           <button className="btn" onClick={() => setEdition('nouveau')}><Icon name="plus" size={15} /> Ajouter</button>
         </div>

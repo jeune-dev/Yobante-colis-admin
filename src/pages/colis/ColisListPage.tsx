@@ -121,7 +121,7 @@ export default function ColisListPage() {
         <button className="btn secondary" onClick={() => setAvances((a) => !a)}>
           <Icon name="settings" size={14} /> Filtres avancés
         </button>
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <div className="actions pousser">
           <div className="search">
             <Icon name="search" size={15} />
             <input
@@ -159,7 +159,7 @@ export default function ColisListPage() {
       <div className="toolbar">
         <Chips options={VUES} value={vue} onChange={choisirVue} />
         {admin && selection.length > 0 && (
-          <div className="actions" style={{ marginLeft: 'auto' }}>
+          <div className="actions pousser">
             <span className="small muted" style={{ alignSelf: 'center' }}>{selection.length} sélectionné(s)</span>
             <button className="btn secondary sm" onClick={() => setSelection([])}>Désélectionner</button>
             <button className="btn sm" onClick={() => setLot(true)}><Icon name="plus" size={13} /> Événement en lot</button>

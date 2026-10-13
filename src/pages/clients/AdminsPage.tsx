@@ -58,7 +58,7 @@ export default function AdminsPage() {
           {Object.entries(ROLES_ADMIN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         {superAdmin && (
-          <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouveau')}>
+          <button className="btn pousser" onClick={() => setEdition('nouveau')}>
             <Icon name="plus" size={15} /> Nouvel administrateur
           </button>
         )}

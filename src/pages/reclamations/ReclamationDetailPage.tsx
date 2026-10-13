@@ -117,7 +117,7 @@ export default function ReclamationDetailPage() {
                     <input type="checkbox" checked={interne} onChange={(e) => setInterne(e.target.checked)} />
                     Note interne (non visible du client)
                   </label>
-                  <button className="btn" style={{ marginLeft: 'auto' }} onClick={envoyer} disabled={repondre.isPending}>
+                  <button className="btn pousser" onClick={envoyer} disabled={repondre.isPending}>
                     <Icon name="send" size={14} /> Envoyer
                   </button>
                 </div>

@@ -51,7 +51,7 @@ export default function VersionsAppPage() {
         <div>L'application mobile compare sa version à ces réglages au démarrage et propose ou impose la mise à jour.</div>
       </div>
       <div className="toolbar">
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouvelle')}>
+        <button className="btn pousser" onClick={() => setEdition('nouvelle')}>
           <Icon name="plus" size={15} /> Nouvelle configuration
         </button>
       </div>

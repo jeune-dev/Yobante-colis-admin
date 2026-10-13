@@ -40,7 +40,7 @@ export default function PersonnelPage() {
           <option value="FR">France</option>
           <option value="SN">Sénégal</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setCreation(true)}>
+        <button className="btn pousser" onClick={() => setCreation(true)}>
           <Icon name="plus" size={15} /> Ajouter un membre
         </button>
       </div>

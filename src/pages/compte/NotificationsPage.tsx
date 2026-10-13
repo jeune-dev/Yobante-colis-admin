@@ -48,7 +48,7 @@ export default function NotificationsPage() {
   return (
     <>
       <div className="toolbar">
-        <button className="btn secondary" style={{ marginLeft: 'auto' }}
+        <button className="btn secondary pousser"
           onClick={() => agir(() => api.patch('/client/notifications/toutes-lues', {}))}>
           <Icon name="check" size={15} /> Tout marquer comme lu
         </button>

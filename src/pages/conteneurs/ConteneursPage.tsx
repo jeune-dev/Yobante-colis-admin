@@ -36,7 +36,7 @@ export default function ConteneursPage() {
           <option value="FR">France → Sénégal</option>
           <option value="SN">Sénégal → France</option>
         </select>
-        <div style={{ marginLeft: 'auto' }}>
+        <div className="pousser">
           <button className="btn" onClick={() => setCreation(true)}>
             <Icon name="plus" size={15} /> Nouveau conteneur
           </button>

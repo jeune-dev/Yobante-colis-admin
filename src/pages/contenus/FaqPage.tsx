@@ -37,7 +37,7 @@ export default function FaqPage() {
           value={filtres.rubrique}
           onChange={(v) => set('rubrique', v)}
         />
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouvelle')}>
+        <button className="btn pousser" onClick={() => setEdition('nouvelle')}>
           <Icon name="plus" size={15} /> Nouvelle question
         </button>
       </div>

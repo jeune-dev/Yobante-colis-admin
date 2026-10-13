@@ -86,7 +86,7 @@ export default function GrilleTarifairePage() {
           <option value="FR">France → Sénégal</option>
           <option value="SN">Sénégal → France</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouveau')}>
+        <button className="btn pousser" onClick={() => setEdition('nouveau')}>
           <Icon name="plus" size={15} /> Nouvel article
         </button>
       </div>

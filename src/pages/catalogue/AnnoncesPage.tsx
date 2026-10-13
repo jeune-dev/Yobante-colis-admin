@@ -76,7 +76,7 @@ export default function AnnoncesPage() {
           <option value="true">Actives</option>
           <option value="false">Inactives</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouvelle')}>
+        <button className="btn pousser" onClick={() => setEdition('nouvelle')}>
           <Icon name="plus" size={15} /> Nouvelle annonce
         </button>
       </div>

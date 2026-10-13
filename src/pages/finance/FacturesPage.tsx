@@ -75,7 +75,7 @@ export default function FacturesPage() {
           <option value="XOF">FCFA</option>
           <option value="EUR">Euro</option>
         </select>
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <div className="actions pousser">
           <button className="btn secondary" onClick={exporter}><Icon name="download" size={15} /> Export CSV</button>
           <button className="btn secondary" disabled={relances.isPending}
             onClick={() => confirm('Relancer tous les clients dont la facture est échue ?') &&

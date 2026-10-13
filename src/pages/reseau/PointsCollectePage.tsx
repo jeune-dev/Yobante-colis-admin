@@ -87,7 +87,7 @@ export default function PointsCollectePage() {
           <option value="true">En maintenance</option>
           <option value="false">Hors maintenance</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setCreation(true)}>
+        <button className="btn pousser" onClick={() => setCreation(true)}>
           <Icon name="plus" size={15} /> Nouveau point
         </button>
       </div>

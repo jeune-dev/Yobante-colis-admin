@@ -87,8 +87,8 @@ export default function TarifsPage() {
           <option value="">Tous départs</option>
           {Object.entries(OPTIONS_PAYS).map(([k, v]) => <option key={k} value={k}>Depuis {v}</option>)}
         </select>
-        <input className="input" type="number" min="0" style={{ width: 150 }} placeholder="Poids (kg)" value={filtres.poids} onChange={(e) => set('poids', e.target.value)} />
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <input className="input champ-etroit" type="number" min="0" placeholder="Poids (kg)" value={filtres.poids} onChange={(e) => set('poids', e.target.value)} />
+        <div className="actions pousser">
           <button className="btn secondary" onClick={() => setAudit(true)}><Icon name="check-circle" size={15} /> Audit de la grille</button>
           <button className="btn secondary" onClick={() => setGrille(true)}><Icon name="grid" size={15} /> Créer une grille</button>
           <button className="btn" onClick={() => setEdition('nouveau')}><Icon name="plus" size={15} /> Nouvelle tranche</button>

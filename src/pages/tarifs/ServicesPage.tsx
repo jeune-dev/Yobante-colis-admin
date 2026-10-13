@@ -87,7 +87,7 @@ export default function ServicesPage() {
           <option value="true">Actifs</option>
           <option value="false">Inactifs</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouveau')}>
+        <button className="btn pousser" onClick={() => setEdition('nouveau')}>
           <Icon name="plus" size={15} /> Nouveau service
         </button>
       </div>

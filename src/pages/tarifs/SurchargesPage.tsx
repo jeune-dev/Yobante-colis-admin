@@ -88,7 +88,7 @@ export default function SurchargesPage() {
           <option value="true">Automatiques</option>
           <option value="false">Optionnelles</option>
         </select>
-        <div className="actions" style={{ marginLeft: 'auto' }}>
+        <div className="actions pousser">
           <button className="btn secondary" onClick={() => setSimulation(true)}><Icon name="activity" size={15} /> Simuler</button>
           <button className="btn" onClick={() => setEdition('nouvelle')}><Icon name="plus" size={15} /> Nouvelle surcharge</button>
         </div>

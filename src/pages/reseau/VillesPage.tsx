@@ -75,7 +75,7 @@ export default function VillesPage() {
           <option value="true">Zones éloignées</option>
           <option value="false">Zones non éloignées</option>
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouvelle')}>
+        <button className="btn pousser" onClick={() => setEdition('nouvelle')}>
           <Icon name="plus" size={15} /> Nouvelle ville
         </button>
       </div>

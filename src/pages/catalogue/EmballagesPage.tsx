@@ -68,7 +68,7 @@ export default function EmballagesPage() {
           <option value="">Tous types</option>
           {Object.entries(TYPES_EMBALLAGE_CATALOGUE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => setEdition('nouveau')}>
+        <button className="btn pousser" onClick={() => setEdition('nouveau')}>
           <Icon name="plus" size={15} /> Nouvel emballage
         </button>
       </div>
@@ -182,7 +182,7 @@ function DialoguePhotos({ emballage, onClose }: { emballage: Emballage; onClose:
         </div>
       )}
       <div className="actions" style={{ marginTop: 14, alignItems: 'center' }}>
-        <input className="input" type="file" multiple accept="image/jpeg,image/png" style={{ maxWidth: 360 }}
+        <input className="input champ-limite" type="file" multiple accept="image/jpeg,image/png"
           onChange={(e) => setFichiers(Array.from(e.target.files ?? []).slice(0, 6))} />
         <button className="btn" disabled={!fichiers.length || envoi} onClick={televerser}>Ajouter {fichiers.length || ''} photo(s)</button>
       </div>
