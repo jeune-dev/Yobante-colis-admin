@@ -1,9 +1,28 @@
-import { useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui';
 
 /** Lit les filtres d'une URL : un paramètre absent prend sa valeur par défaut. */
+/** Points de rupture communs (voir l'en-tête de styles.css). */
+export const MOBILE = '(max-width: 767.98px)';
+
+/**
+ * Suit une media query. La valeur est lue de façon synchrone dès le premier
+ * rendu : aucun clignotement (par exemple tableau → cartes) au chargement.
+ */
+export function useMediaQuery(requete: string) {
+  const abonner = useCallback(
+    (prevenir: () => void) => {
+      const mq = window.matchMedia(requete);
+      mq.addEventListener('change', prevenir);
+      return () => mq.removeEventListener('change', prevenir);
+    },
+    [requete]
+  );
+  return useSyncExternalStore(abonner, () => window.matchMedia(requete).matches, () => false);
+}
+
 export function lireFiltres<T extends Record<string, string>>(params: URLSearchParams, defauts: T): T {
   return Object.fromEntries(Object.keys(defauts).map((k) => [k, params.get(k) ?? defauts[k]])) as T;
 }

@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Icon from './Icon';
 import NotificationsBell from './NotificationsBell';
@@ -9,6 +9,7 @@ import { useAuth } from '@/auth/store';
 import { api } from '@/api/client';
 import { ROLES } from '@/lib/labels';
 import { initiales, nomComplet } from '@/lib/format';
+import { MOBILE, useMediaQuery } from '@/lib/hooks';
 
 type Page = { to: string; label: string; icon: string; sub: string };
 type Entree = { section: string } | Page;
@@ -70,6 +71,30 @@ export default function Layout() {
   const navigate = useNavigate();
   const { utilisateur, refreshToken, clear } = useAuth();
   const [ouvert, setOuvert] = useState(false);
+  // Le tiroir n'existe que sur mobile : au-delà, le menu est toujours affiché
+  const mobile = useMediaQuery(MOBILE);
+  const tiroir = ouvert && mobile;
+  const burger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLElement>(null);
+
+  // Fermé à chaque changement de page (lien, retour arrière, redirection)
+  useEffect(() => setOuvert(false), [pathname]);
+
+  // Tiroir ouvert : Échap le ferme, la page derrière ne défile plus, le focus
+  // entre dans le menu puis revient au bouton à la fermeture
+  useEffect(() => {
+    if (!tiroir) return;
+    const bouton = burger.current;
+    const echap = (e: KeyboardEvent) => e.key === 'Escape' && setOuvert(false);
+    document.addEventListener('keydown', echap);
+    document.documentElement.classList.add('tiroir-ouvert');
+    menu.current?.querySelector<HTMLElement>('a')?.focus();
+    return () => {
+      document.removeEventListener('keydown', echap);
+      document.documentElement.classList.remove('tiroir-ouvert');
+      bouton?.focus();
+    };
+  }, [tiroir]);
 
   // Page courante : la plus longue route qui préfixe l'URL (/colis/123 → Colis)
   const page =
@@ -89,8 +114,8 @@ export default function Layout() {
 
   return (
     <div className="app">
-      {ouvert && <div className="sb-voile" onClick={() => setOuvert(false)} />}
-      <aside className={`sb${ouvert ? ' open' : ''}`}>
+      {tiroir && <div className="sb-voile" onClick={() => setOuvert(false)} />}
+      <aside id="menu-principal" ref={menu} className={`sb${tiroir ? ' open' : ''}`} aria-label="Menu principal">
         <div className="sb-top">
           <img className="sb-logo" src={logo} alt="Yobante" />
           <div>
@@ -110,10 +135,11 @@ export default function Layout() {
                 to={e.to}
                 end={e.to === '/'}
                 className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                title={e.label}
                 onClick={() => setOuvert(false)}
               >
                 <Icon name={e.icon} size={17} />
-                {e.label}
+                <span className="nav-label">{e.label}</span>
               </NavLink>
             )
           )}
@@ -132,9 +158,11 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div className="main">
+      {/* Tiroir ouvert : le reste de la page est inerte (focus piégé dans le menu) */}
+      <div className="main" inert={tiroir}>
         <header className="topbar">
-          <button className="btn ghost sm burger" onClick={() => setOuvert((o) => !o)} aria-label="Menu" aria-expanded={ouvert}>
+          <button ref={burger} className="btn ghost sm burger" onClick={() => setOuvert((o) => !o)} aria-label="Menu"
+            aria-expanded={tiroir} aria-controls="menu-principal">
             <Icon name="grid" size={18} />
           </button>
           <div>
