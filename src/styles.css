@@ -1838,12 +1838,6 @@ svg {
     font-size: 0.72rem;
   }
 
-  /* 16px minimum : sinon iOS zoome sur le champ à la saisie */
-  .input,
-  .select,
-  .textarea {
-    font-size: 16px;
-  }
 
   .toolbar {
     gap: 0.5rem;
@@ -2039,6 +2033,17 @@ svg {
   }
 }
 
+
+/* 16 px minimum sur mobile et sur tout écran tactile (iPhone, iPad) : en
+   dessous, iOS zoome sur le champ au toucher et la page se décale */
+@media (max-width: 767.98px), (pointer: coarse) {
+  .input,
+  .select,
+  .textarea,
+  .login-input {
+    font-size: 16px;
+  }
+}
 
 /* Écrans tactiles : cibles d'au moins 44 × 44 px, espacées d'au moins 8 px */
 @media (pointer: coarse) {
