@@ -47,10 +47,13 @@ export default function LoginPage() {
     <main className="login-page">
       <section className="login-card" aria-labelledby="login-heading">
         <header className="login-card-head">
-          <span className="login-card-logo">
-            {/* Décoratif : la marque est déjà dans le titre */}
-            <img src={logo} alt="" aria-hidden="true" />
-          </span>
+          {/* Bandeau en dégradé bleu, seulement derrière le logo */}
+          <div className="login-card-banniere">
+            <span className="login-card-logo">
+              {/* Décoratif : la marque est déjà dans le titre */}
+              <img src={logo} alt="" aria-hidden="true" />
+            </span>
+          </div>
           <h1 id="login-heading" className="login-card-title">Yobante Administration</h1>
           <p className="login-card-sub">Connectez-vous à votre espace</p>
         </header>
