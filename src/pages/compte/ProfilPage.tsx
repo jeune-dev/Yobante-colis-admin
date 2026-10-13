@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
@@ -41,6 +41,12 @@ export default function ProfilPage() {
 
   // Garde l'identité affichée dans la barre latérale à jour
   const synchroniser = (u: Profil) => accessToken && setSession(accessToken, undefined, u as Utilisateur);
+
+  // À l'ouverture du profil, la barre latérale reprend la photo et le nom à
+  // jour (photo changée depuis un autre appareil, ancienne session…)
+  useEffect(() => {
+    if (q.data && accessToken) setSession(accessToken, undefined, q.data as Utilisateur);
+  }, [q.data, accessToken, setSession]);
 
   const basculer = async (cle: (typeof PREFERENCES)[number]['cle'], valeur: boolean) => {
     try {

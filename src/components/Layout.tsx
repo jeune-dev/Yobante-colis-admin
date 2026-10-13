@@ -146,7 +146,10 @@ export default function Layout() {
         </nav>
         <div className="sb-foot">
           <div className="user-pill">
-            <Link to="/profil" className="ava" title="Mon profil" onClick={() => setOuvert(false)}>{initiales(utilisateur)}</Link>
+            <Link to="/profil" className="ava" title="Mon profil" onClick={() => setOuvert(false)}>
+              {/* Photo de profil si elle existe, sinon les initiales */}
+              {utilisateur?.avatarUrl ? <img src={utilisateur.avatarUrl} alt="" /> : initiales(utilisateur)}
+            </Link>
             <Link to="/profil" className="user-info" style={{ color: 'inherit' }} onClick={() => setOuvert(false)}>
               <div className="user-name">{nomComplet(utilisateur)}</div>
               <div className="user-role">{ROLES[utilisateur?.role ?? ''] ?? utilisateur?.role}</div>
