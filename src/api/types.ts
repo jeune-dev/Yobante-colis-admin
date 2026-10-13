@@ -81,6 +81,9 @@ export interface Facture {
   montantTva: Num;
   montantTotal: Num;
   montantPaye: Num;
+  /** Avoirs imputés sur la facture : ils réduisent le reste dû. */
+  montantAvoirs?: Num;
+  soldeDu?: Num;
   remise: Num;
   montantFret?: Num;
   montantSurcharges?: Num;
@@ -130,6 +133,8 @@ export interface Colis {
   poidsVerifieKg?: Num;
   valeurDeclaree?: Num;
   deviseValeur?: string;
+  assuranceSouscrite?: boolean;
+  incoterm?: string;
   devise: string;
   montantFret?: Num;
   montantSurcharges?: Num;

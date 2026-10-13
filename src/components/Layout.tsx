@@ -48,6 +48,7 @@ const NAV: Entree[] = [
   { to: '/annonces', label: 'Annonces', icon: 'message-square', sub: "Messages sur l'accueil de l'application" },
   { to: '/avis', label: 'Avis clients', icon: 'star', sub: 'Modération des évaluations' },
   { to: '/faq', label: 'FAQ', icon: 'inbox', sub: 'Questions fréquentes' },
+  { to: '/demandes-contact', label: 'Demandes de contact', icon: 'mail', sub: 'Messages des sites vitrines' },
   { to: '/versions-app', label: "Versions de l'app", icon: 'smartphone', sub: "Mises à jour de l'application mobile" },
   { section: 'Système' },
   { to: '/parametres', label: 'Paramètres', icon: 'settings', sub: 'Réglages du moteur métier' },

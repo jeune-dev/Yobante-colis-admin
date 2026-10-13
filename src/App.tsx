@@ -41,6 +41,7 @@ const AvisPage = lazy(() => import('./pages/contenus/AvisPage'));
 const FaqPage = lazy(() => import('./pages/contenus/FaqPage'));
 const VersionsAppPage = lazy(() => import('./pages/contenus/VersionsAppPage'));
 const SuppressionsComptePage = lazy(() => import('./pages/contenus/SuppressionsComptePage'));
+const DemandesContactPage = lazy(() => import('./pages/contenus/DemandesContactPage'));
 const ParametresPage = lazy(() => import('./pages/systeme/ParametresPage'));
 const ModelesEmailsPage = lazy(() => import('./pages/systeme/ModelesEmailsPage'));
 const JournalPage = lazy(() => import('./pages/systeme/JournalPage'));
@@ -110,6 +111,7 @@ export default function App() {
         <Route path="parametres" element={<ParametresPage />} />
         <Route path="modeles-emails" element={<ModelesEmailsPage />} />
         <Route path="suppressions-compte" element={<SuppressionsComptePage />} />
+        <Route path="demandes-contact" element={<DemandesContactPage />} />
         <Route path="journal" element={<JournalPage />} />
 
         <Route path="profil" element={<ProfilPage />} />

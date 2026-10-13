@@ -405,7 +405,11 @@ function DialogueProposition({ colis, onClose }: PropsDialogue) {
     <Modal title="Proposer un tarif (colis XXL)" onClose={onClose}
       footer={<Pied onClose={onClose} envoi={a.isPending} libelleOk="Envoyer la proposition"
         onOk={() => (Number(montantTotal) > 0 ? a.mutate(undefined, { onSuccess: onClose }) : toast.error('Indiquez un montant'))} />}>
-      <Field label={`Montant proposé (${colis.devise})`}>
+      <p className="small muted">
+        Indiquez le prix du transport TTC. {colis.assuranceSouscrite ? "La prime d'assurance s'y ajoute. " : ''}
+        {colis.incoterm === 'DDP' ? "Les droits et taxes à l'import (DDP) s'y ajoutent." : ''}
+      </p>
+      <Field label={`Prix du transport TTC (${colis.devise})`}>
         <input className="input" type="number" min="0" autoFocus value={montantTotal} onChange={(e) => setMontant(e.target.value)} />
       </Field>
       <Field label="Validité (jours)">
@@ -454,6 +458,8 @@ function DialogueEvenement({ colis, onClose }: PropsDialogue) {
   const [commentaire, setCommentaire] = useState('');
   const [codeRetrait, setCodeRetrait] = useState('');
   const [visiblePublic, setVisible] = useState(true);
+  const [remiseSansReglement, setRemiseSansReglement] = useState(false);
+  const remise = codeEvenement === 'RETIRE' || codeEvenement === 'LIVRE';
 
   const a = useAction(
     () =>
@@ -464,6 +470,7 @@ function DialogueEvenement({ colis, onClose }: PropsDialogue) {
         commentaire: commentaire || undefined,
         codeRetrait: codeRetrait || undefined,
         visiblePublic,
+        remiseSansReglement: remise ? remiseSansReglement : undefined,
       }),
     { succes: 'Événement enregistré', invalider: ['colis', 'dashboard'] }
   );
@@ -500,6 +507,12 @@ function DialogueEvenement({ colis, onClose }: PropsDialogue) {
             <Field label="Code de retrait remis par le destinataire">
               <input className="input" value={codeRetrait} onChange={(e) => setCodeRetrait(e.target.value)} />
             </Field>
+          )}
+          {remise && (
+            <label className="check">
+              <input type="checkbox" checked={remiseSansReglement} onChange={(e) => setRemiseSansReglement(e.target.checked)} />
+              Remettre le colis malgré une facture impayée (dérogation tracée au journal)
+            </label>
           )}
           <Field label="Commentaire">
             <textarea className="textarea" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />

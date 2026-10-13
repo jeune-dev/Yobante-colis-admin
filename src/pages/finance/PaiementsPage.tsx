@@ -122,10 +122,11 @@ export default function PaiementsPage() {
       {action?.type === 'rembourser' && (
         <FormModal
           title={`Rembourser ${action.paiement.reference}`}
-          intro={<p className="small">Montant encaissé : {montant(action.paiement.montant, action.paiement.devise)}. Laisser le montant vide pour un remboursement total.</p>}
+          intro={<p className="small">Montant encaissé : {montant(action.paiement.montant, action.paiement.devise)}. Laisser le montant vide pour rembourser tout le reste. Par défaut, la somme rendue n'est plus due : un avoir du même montant est imputé sur la facture.</p>}
           champs={[
             { name: 'montant', label: `Montant (${action.paiement.devise})`, type: 'number', step: '0.01' },
             { name: 'motif', label: 'Motif', required: true, full: true },
+            { name: 'rouvrirFacture', label: 'La somme redevient due (paiement contesté, encaissement erroné)', type: 'checkbox', full: true },
           ]}
           submitLabel="Rembourser"
           danger

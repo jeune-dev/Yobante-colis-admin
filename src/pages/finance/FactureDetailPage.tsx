@@ -25,8 +25,9 @@ export default function FactureDetailPage() {
   if (q.isLoading) return <Loader />;
   if (q.error) return <ErrorBox error={q.error} />;
   const f = q.data!;
-  const reste = Number(f.montantTotal) - Number(f.montantPaye);
-  const ouverte = ['en_attente', 'partiellement_payee', 'brouillon'].includes(f.statut);
+  const reste = Number(f.montantTotal) - Number(f.montantPaye) - Number(f.montantAvoirs ?? 0);
+  // Un avoir ne s'encaisse ni ne se relance : c'est une somme due au client
+  const ouverte = f.type !== 'avoir' && ['en_attente', 'partiellement_payee', 'brouillon'].includes(f.statut);
   const fermer = () => setDialogue(null);
 
   const document = async () => {
@@ -54,7 +55,7 @@ export default function FactureDetailPage() {
           {ouverte && Number(f.montantPaye) === 0 && (
             <button className="btn danger" onClick={() => setDialogue('annuler')}>Annuler</button>
           )}
-          {f.type !== 'avoir' && ['payee', 'partiellement_payee'].includes(f.statut) && (
+          {f.type !== 'avoir' && ['en_attente', 'payee', 'partiellement_payee'].includes(f.statut) && (
             <button className="btn secondary" onClick={() => setDialogue('avoir')}><Icon name="arrow-down" size={15} /> Émettre un avoir</button>
           )}
         </div>
@@ -108,6 +109,9 @@ export default function FactureDetailPage() {
             <KV label="Émise le">{date(f.dateEmission ?? f.createdAt)}</KV>
             <KV label="Échéance">{date(f.dateLimitePaiement)}</KV>
             <KV label="Payé">{montant(f.montantPaye, f.devise)}</KV>
+            {Number(f.montantAvoirs ?? 0) > 0 && (
+              <KV label="Avoirs imputés">− {montant(f.montantAvoirs ?? 0, f.devise)}</KV>
+            )}
             <KV label="Reste à payer"><strong>{montant(Math.max(reste, 0), f.devise)}</strong></KV>
           </div>
         </Card>
