@@ -2161,8 +2161,13 @@ td.right,
 }
 
 /* Tiroir ouvert : la page derrière ne défile plus (scrollbar-gutter évite le saut) */
-html.tiroir-ouvert {
+html.tiroir-ouvert,
+html.modale-ouverte {
   overflow: hidden;
+}
+
+.modal:focus {
+  outline: none;
 }
 
 /* ════ ResponsiveTable : tableau ≥ 768 px, cartes en dessous ════ */
@@ -2481,4 +2486,13 @@ html.tiroir-ouvert {
 .texte-limite,
 .texte-limite-l {
   overflow-wrap: anywhere;
+}
+
+/* Formulaires */
+.pleine-largeur {
+  grid-column: 1 / -1;
+}
+
+.form-intro {
+  margin-bottom: 12px;
 }

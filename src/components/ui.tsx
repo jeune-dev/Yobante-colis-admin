@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
 import Icon from './Icon';
 import type { Ton } from '@/lib/labels';
@@ -125,6 +125,7 @@ export function Modal({
   large?: boolean;
 }) {
   const overlay = useRef<HTMLDivElement>(null);
+  const idTitre = useId();
   useEffect(() => {
     // Avec des modales empilées, Échap ne ferme que celle du dessus
     const esc = (e: KeyboardEvent) => {
@@ -135,11 +136,23 @@ export function Modal({
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
 
+  // À l'ouverture : la page derrière ne défile plus et le focus entre dans la
+  // modale ; à la fermeture, il revient à l'élément qui l'a ouverte
+  useEffect(() => {
+    const avant = document.activeElement as HTMLElement | null;
+    document.documentElement.classList.add('modale-ouverte');
+    overlay.current?.querySelector<HTMLElement>('.modal')?.focus();
+    return () => {
+      if (!document.querySelector('.overlay')) document.documentElement.classList.remove('modale-ouverte');
+      avant?.focus?.();
+    };
+  }, []);
+
   return (
     <div ref={overlay} className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal${large ? ' large' : ''}`}>
+      <div className={`modal${large ? ' large' : ''}`} role="dialog" aria-modal="true" aria-labelledby={idTitre} tabIndex={-1}>
         <div className="modal-head">
-          <div className="modal-title">{title}</div>
+          <div className="modal-title" id={idTitre}>{title}</div>
           <button className="btn ghost sm" onClick={onClose} aria-label="Fermer">
             <Icon name="x" size={16} />
           </button>

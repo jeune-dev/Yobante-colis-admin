@@ -82,7 +82,13 @@ export function ChampSaisie({
   valeur: unknown;
   onChange: (v: unknown) => void;
 }) {
-  const commun = { disabled: c.disabled, placeholder: c.placeholder };
+  // Libellé lisible par les lecteurs d'écran, bon clavier virtuel sur mobile
+  const commun = { disabled: c.disabled, placeholder: c.placeholder, 'aria-label': c.label };
+  const clavier = {
+    inputMode: ({ number: 'decimal', tel: 'tel', email: 'email' } as const)[c.type as 'number' | 'tel' | 'email'],
+    autoComplete: ({ email: 'email', tel: 'tel', password: 'new-password' } as const)[c.type as 'email' | 'tel' | 'password'],
+    enterKeyHint: 'next' as const,
+  };
   switch (c.type) {
     case 'textarea':
     case 'json':
@@ -96,7 +102,7 @@ export function ChampSaisie({
       );
     case 'select':
       return (
-        <select className="select" value={String(valeur ?? '')} onChange={(e) => onChange(e.target.value)} disabled={c.disabled}>
+        <select className="select" value={String(valeur ?? '')} onChange={(e) => onChange(e.target.value)} disabled={c.disabled} aria-label={c.label}>
           {!c.required && <option value="">—</option>}
           {c.required && valeur === '' && <option value="">— Choisir —</option>}
           {listeOptions(c.options).map((o) => (
@@ -129,6 +135,7 @@ export function ChampSaisie({
           type="file"
           accept={c.accept ?? 'image/jpeg,image/png,application/pdf'}
           multiple={c.type === 'files'}
+          aria-label={c.label}
           onChange={(e) => onChange(c.type === 'files' ? Array.from(e.target.files ?? []) : e.target.files?.[0] ?? null)}
         />
       );
@@ -141,6 +148,7 @@ export function ChampSaisie({
           value={String(valeur ?? '')}
           onChange={(e) => onChange(e.target.value)}
           {...commun}
+          {...clavier}
         />
       );
   }
@@ -218,11 +226,11 @@ export function FormModal({
         </>
       }
     >
-      {intro && <div style={{ marginBottom: 12 }}>{intro}</div>}
+      {intro && <div className="form-intro">{intro}</div>}
       <div className="form-row">
         {visibles.map((c) =>
           c.type === 'checkbox' ? (
-            <label key={c.name} className="check" style={{ gridColumn: '1 / -1' }}>
+            <label key={c.name} className="check pleine-largeur">
               <input
                 type="checkbox"
                 checked={!!saisies[c.name]}
@@ -234,10 +242,7 @@ export function FormModal({
           ) : (
             <div
               key={c.name}
-              style={{
-                gridColumn:
-                  c.full || ['textarea', 'json', 'multiselect', 'files'].includes(c.type ?? '') ? '1 / -1' : undefined,
-              }}
+              className={c.full || ['textarea', 'json', 'multiselect', 'files'].includes(c.type ?? '') ? 'pleine-largeur' : undefined}
             >
               <Field label={`${c.label}${c.required ? ' *' : ''}`} hint={c.hint}>
                 <ChampSaisie c={c} valeur={saisies[c.name]} onChange={(v) => setSaisies({ ...saisies, [c.name]: v })} />
