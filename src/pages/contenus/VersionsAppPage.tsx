@@ -7,6 +7,7 @@ import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
 import { PLATEFORMES, libelle } from '@/lib/labels';
 import { dateHeure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Version {
   id: string;
@@ -58,32 +59,27 @@ export default function VersionsAppPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune configuration de version</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Plateforme</th><th>Dernière</th><th>Minimale</th><th>Mise à jour</th><th>Message</th><th>Modifiée</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((v) => (
-                  <tr key={v.id}>
-                    <td><strong>{libelle(PLATEFORMES, v.plateforme)}</strong></td>
-                    <td className="mono">{v.derniereVersion}</td>
-                    <td className="mono">{v.versionMinimale}</td>
-                    <td>{v.miseAJourForcee ? <Badge ton="rouge">Forcée</Badge> : <Badge>Conseillée</Badge>}</td>
-                    <td className="small">{v.titre}<div className="muted">{v.message}</div></td>
-                    <td className="small muted">{dateHeure(v.updatedAt)}</td>
-                    <td>{v.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm('Supprimer cette configuration ?') && supprimer.mutate(v)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(v) => v.id}
+            colonnes={[
+              { cle: 'plateforme', titre: 'Plateforme', cellule: (v) => <strong>{libelle(PLATEFORMES, v.plateforme)}</strong> },
+              { cle: 'derniere', titre: 'Dernière', className: 'mono', cellule: (v) => v.derniereVersion },
+              { cle: 'minimale', titre: 'Minimale', className: 'mono', cellule: (v) => v.versionMinimale },
+              { cle: 'maj', titre: 'Mise à jour', cellule: (v) => (v.miseAJourForcee ? <Badge ton="rouge">Forcée</Badge> : <Badge>Conseillée</Badge>) },
+              { cle: 'message', titre: 'Message', className: 'small', cellule: (v) => <>{v.titre}<div className="muted">{v.message}</div></> },
+              { cle: 'modifiee', titre: 'Modifiée', className: 'small muted', priorite: 'basse', cellule: (v) => dateHeure(v.updatedAt) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (v) => (v.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>) },
+              { cle: 'actions', cellule: (v) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette configuration ?') && supprimer.mutate(v)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

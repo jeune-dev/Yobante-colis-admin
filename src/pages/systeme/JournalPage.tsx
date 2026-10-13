@@ -5,6 +5,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@
 import { ENTITES_JOURNAL, ROLES, libelle, libelleAction } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Activite {
   id: string;
@@ -50,27 +51,20 @@ export default function JournalPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.activites.length ? <Empty>Aucune activité</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Auteur</th><th>Action</th><th>Objet</th><th>Détails</th></tr></thead>
-              <tbody>
-                {q.data.activites.map((a) => (
-                  <tr key={a.id}>
-                    <td className="small muted" style={{ whiteSpace: 'nowrap' }}>{dateHeure(a.createdAt)}</td>
-                    <td>
-                      {nomComplet(a.User)}
-                      {a.User?.role && <div><Badge>{libelle(ROLES, a.User.role)}</Badge></div>}
-                    </td>
-                    <td title={a.action}>{libelleAction(a.action)}</td>
-                    <td className="small">{a.entite ? (ENTITES_JOURNAL[a.entite] ?? a.entite) : '—'}</td>
-                    <td className="small muted" style={{ maxWidth: 380, wordBreak: 'break-word' }}>
-                      {a.details && Object.keys(a.details).length ? resume(a.details) : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.activites}
+            cleLigne={(a) => a.id}
+            colonnes={[
+              { cle: 'date', titre: 'Date', className: 'small muted nowrap', mobile: 'soustitre', cellule: (a) => dateHeure(a.createdAt) },
+              { cle: 'auteur', titre: 'Auteur', cellule: (a) => <>
+                {nomComplet(a.User)}
+                {a.User?.role && <div><Badge>{libelle(ROLES, a.User.role)}</Badge></div>}
+              </> },
+              { cle: 'action', titre: 'Action', mobile: 'titre', cellule: (a) => <span title={a.action}>{libelleAction(a.action)}</span> },
+              { cle: 'objet', titre: 'Objet', className: 'small', cellule: (a) => (a.entite ? (ENTITES_JOURNAL[a.entite] ?? a.entite) : '—') },
+              { cle: 'details', titre: 'Détails', className: 'small muted texte-limite', cellule: (a) => (a.details && Object.keys(a.details).length ? resume(a.details) : '—') },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

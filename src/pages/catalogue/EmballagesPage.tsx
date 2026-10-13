@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Modal, toast } from '@/components
 import { CATEGORIES_COURT, CATEGORIES, DEVISES, TYPES_EMBALLAGE_CATALOGUE, libelle } from '@/lib/labels';
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Emballage {
   id: string;
@@ -76,43 +77,36 @@ export default function EmballagesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun emballage</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th /><th>Code</th><th>Emballage</th><th>Type</th><th>Dimensions</th><th>Catégories</th><th className="right">Prix</th><th>Stock</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((e) => (
-                  <tr key={e.id}>
-                    <td style={{ width: 48 }}>{e.photos?.[0] && <img src={e.photos[0].url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />}</td>
-                    <td className="mono">{e.code}</td>
-                    <td><strong>{e.libelle}</strong>{e.description && <div className="muted small">{e.description}</div>}</td>
-                    <td>{libelle(TYPES_EMBALLAGE_CATALOGUE, e.type)}</td>
-                    <td className="small">
-                      {e.longueurCm ? `${Number(e.longueurCm)}×${Number(e.largeurCm)}×${Number(e.hauteurCm)} cm` : '—'}
-                      {e.capaciteKg && <div className="muted">{Number(e.capaciteKg)} kg max</div>}
-                    </td>
-                    <td className="small">{e.categoriesEligibles?.map((c) => CATEGORIES_COURT[c] ?? c).join(', ') || 'Toutes'}</td>
-                    <td className="right">{montant(e.prix, e.devise)}</td>
-                    <td>
-                      {e.stock == null ? <span className="muted small">Non suivi</span>
-                        : e.stock === 0 ? <Badge ton="rouge">Rupture</Badge>
-                        : e.stock < 5 ? <Badge ton="orange">{e.stock}</Badge> : e.stock}
-                    </td>
-                    <td>{e.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(e)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Photos" onClick={() => setPhotos(e)}><Icon name="image" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(e)}>{e.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Supprimer ${e.libelle} ?`) && supprimer.mutate(e)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(e) => e.id}
+            colonnes={[
+              { cle: 'photo', mobile: 'masque', className: 'col-vignette', cellule: (e) => e.photos?.[0] && <img className="vignette-carree" src={e.photos[0].url} alt="" /> },
+              { cle: 'code', titre: 'Code', className: 'mono', priorite: 'basse', cellule: (e) => e.code },
+              { cle: 'emballage', titre: 'Emballage', mobile: 'titre', cellule: (e) => <><strong>{e.libelle}</strong>{e.description && <div className="muted small">{e.description}</div>}</> },
+              { cle: 'type', titre: 'Type', cellule: (e) => libelle(TYPES_EMBALLAGE_CATALOGUE, e.type) },
+              { cle: 'dimensions', titre: 'Dimensions', className: 'small', cellule: (e) => <>
+                {e.longueurCm ? `${Number(e.longueurCm)}×${Number(e.largeurCm)}×${Number(e.hauteurCm)} cm` : '—'}
+                {e.capaciteKg && <div className="muted">{Number(e.capaciteKg)} kg max</div>}
+              </> },
+              { cle: 'categories', titre: 'Catégories', className: 'small', priorite: 'basse', cellule: (e) => e.categoriesEligibles?.map((c) => CATEGORIES_COURT[c] ?? c).join(', ') || 'Toutes' },
+              { cle: 'prix', titre: 'Prix', className: 'right', cellule: (e) => montant(e.prix, e.devise) },
+              { cle: 'stock', titre: 'Stock', cellule: (e) => (e.stock == null ? <span className="muted small">Non suivi</span>
+                : e.stock === 0 ? <Badge ton="rouge">Rupture</Badge>
+                : e.stock < 5 ? <Badge ton="orange">{e.stock}</Badge> : e.stock) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (e) => (e.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>) },
+              { cle: 'actions', cellule: (e) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(e)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Photos" aria-label="Photos" onClick={() => setPhotos(e)}><Icon name="image" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(e)}>{e.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${e.libelle} ?`) && supprimer.mutate(e)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

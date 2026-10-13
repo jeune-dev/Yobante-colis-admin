@@ -11,6 +11,7 @@ import { date, nomComplet, poids } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import { usePointsOptions } from '@/lib/options';
 import { DialoguePoint, type Point } from './PointsCollectePage';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type Creneau = { debut: string; fin: string };
 type Horaires = Record<string, Creneau[]>;
@@ -116,23 +117,19 @@ export default function PointDetailPage() {
       <div className="grid grid-main-side">
         <Card title={`Stock (${stock.data?.pagination.totalItems ?? 0})`} flush>
           {stock.isLoading ? <Loader /> : !stock.data?.colis.length ? <Empty>Aucun colis présent</Empty> : (
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Référence</th><th>Destinataire</th><th>Pièces</th><th>Poids</th><th>Statut</th><th>Retrait avant</th></tr></thead>
-                <tbody>
-                  {stock.data.colis.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
-                      <td className="mono">{c.reference}</td>
-                      <td>{c.destinataireNom}<div className="muted small">{c.destinataireTelephone}</div></td>
-                      <td>{c.nbPieces}</td>
-                      <td className="small">{poids(c.poidsFactureKg)}</td>
-                      <td><StatutBadge table={STATUTS_COLIS} valeur={c.statut} /></td>
-                      <td className="small">{date(c.dateLimiteRetrait)}{c.enSouffrance && <> <Badge ton="rouge">Souffrance</Badge></>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              lignes={stock.data.colis}
+              cleLigne={(c) => c.id}
+              onLigne={(c) => navigate(`/colis/${c.id}`)}
+              colonnes={[
+                { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (c) => c.reference },
+                { cle: 'destinataire', titre: 'Destinataire', cellule: (c) => <>{c.destinataireNom}<div className="muted small">{c.destinataireTelephone}</div></> },
+                { cle: 'pieces', titre: 'Pièces', cellule: (c) => c.nbPieces },
+                { cle: 'poids', titre: 'Poids', className: 'small', cellule: (c) => poids(c.poidsFactureKg) },
+                { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
+                { cle: 'retrait', titre: 'Retrait avant', className: 'small', cellule: (c) => <>{date(c.dateLimiteRetrait)}{c.enSouffrance && <> <Badge ton="rouge">Souffrance</Badge></>}</> },
+              ]}
+            />
           )}
           <Pagination info={stock.data?.pagination} onPage={setPage} />
         </Card>
@@ -156,18 +153,16 @@ export default function PointDetailPage() {
             </div>
           </Card>
           <Card title="Horaires">
-            <table>
-              <tbody>
-                {JOURS.map((j) => (
-                  <tr key={j}>
-                    <td style={{ textTransform: 'capitalize', padding: '0.35rem 0' }}>{j}</td>
-                    <td className="small" style={{ padding: '0.35rem 0' }}>
-                      {p.horaires?.[j]?.length ? p.horaires[j].map((c) => `${c.debut}–${c.fin}`).join(', ') : <span className="muted">Fermé</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ResponsiveTable
+              variante="liste"
+              sansEntete
+              lignes={JOURS}
+              cleLigne={(j) => j}
+              colonnes={[
+                { cle: 'jour', className: 'jour td-serre', cellule: (j) => j },
+                { cle: 'horaires', className: 'small td-serre', cellule: (j) => (p.horaires?.[j]?.length ? p.horaires[j].map((c) => `${c.debut}–${c.fin}`).join(', ') : <span className="muted">Fermé</span>) },
+              ]}
+            />
           </Card>
         </div>
       </div>
@@ -259,31 +254,31 @@ function DialogueHoraires({ point, onClose }: { point: PointDetail; onClose: () 
         <button className="btn" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
       </>
     }>
-      <table>
-        <tbody>
-          {JOURS.map((j) => (
-            <tr key={j}>
-              <td style={{ textTransform: 'capitalize', width: 110 }}>{j}</td>
-              <td>
-                <div className="actions" style={{ alignItems: 'center' }}>
-                  {!h[j].length && <span className="muted small">Fermé</span>}
-                  {h[j].map((c, i) => (
-                    <span key={i} className="actions" style={{ alignItems: 'center', gap: 4 }}>
-                      <input className="input champ-heure" type="time" value={c.debut} onChange={(e) => maj(j, i, 'debut', e.target.value)} />
-                      –
-                      <input className="input champ-heure" type="time" value={c.fin} onChange={(e) => maj(j, i, 'fin', e.target.value)} />
-                      <button className="btn ghost sm" onClick={() => setH({ ...h, [j]: h[j].filter((_, k) => k !== i) })}><Icon name="x" size={13} /></button>
-                    </span>
-                  ))}
-                  <button className="btn ghost sm" onClick={() => setH({ ...h, [j]: [...h[j], { debut: '09:00', fin: '18:00' }] })}>
-                    <Icon name="plus" size={13} /> Créneau
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ResponsiveTable
+        variante="liste"
+        sansEntete
+        lignes={JOURS}
+        cleLigne={(j) => j}
+        colonnes={[
+          { cle: 'jour', className: 'jour col-jour', cellule: (j) => j },
+          { cle: 'creneaux', cellule: (j) => (
+            <div className="actions centre">
+              {!h[j].length && <span className="muted small">Fermé</span>}
+              {h[j].map((c, i) => (
+                <span key={i} className="actions centre creneau">
+                  <input className="input champ-heure" type="time" value={c.debut} onChange={(e) => maj(j, i, 'debut', e.target.value)} aria-label={`Début ${j}`} />
+                  –
+                  <input className="input champ-heure" type="time" value={c.fin} onChange={(e) => maj(j, i, 'fin', e.target.value)} aria-label={`Fin ${j}`} />
+                  <button className="btn ghost sm" aria-label="Retirer le créneau" onClick={() => setH({ ...h, [j]: h[j].filter((_, k) => k !== i) })}><Icon name="x" size={13} /></button>
+                </span>
+              ))}
+              <button className="btn ghost sm" onClick={() => setH({ ...h, [j]: [...h[j], { debut: '09:00', fin: '18:00' }] })}>
+                <Icon name="plus" size={13} /> Créneau
+              </button>
+            </div>
+          ) },
+        ]}
+      />
     </Modal>
   );
 }

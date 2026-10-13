@@ -11,6 +11,7 @@ import { date, dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useCoursiersOptions, usePointsOptions, useVillesOptions } from '@/lib/options';
 import { ouvrirDocument } from '@/lib/format';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Tournee {
   id: string;
@@ -81,33 +82,28 @@ export default function TourneesCollectePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.tournees.length ? <Empty>Aucune tournée</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Référence</th><th>Tournée</th><th>Date</th><th>Pays</th><th>Inscrits</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
-              <tbody>
-                {q.data.tournees.map((t) => (
-                  <tr key={t.id}>
-                    <td className="mono"><a style={{ cursor: 'pointer' }} onClick={() => setDetail(t.id)}>{t.reference}</a></td>
-                    <td><strong>{t.titre}</strong>{t.codesPostaux?.length ? <div className="muted small">CP : {t.codesPostaux.slice(0, 6).join(', ')}{t.codesPostaux.length > 6 ? '…' : ''}</div> : null}</td>
-                    <td className="small">{date(t.dateCollecte)}{t.heureDebut && <div className="muted">{t.heureDebut}–{t.heureFin}</div>}</td>
-                    <td>{libelle(PAYS, t.pays)}</td>
-                    <td>{t.nbInscrits}{t.capaciteMax ? ` / ${t.capaciteMax}` : ''}</td>
-                    <td className="small">{t.coursier ? nomComplet(t.coursier) : '—'}</td>
-                    <td><StatutBadge table={STATUTS_TOURNEE} valeur={t.statut} /></td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn secondary sm" onClick={() => setStatut(t)}>Statut</button>
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Supprimer la tournée ${t.titre} ?`) && supprimer.mutate(t)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.tournees}
+            cleLigne={(t) => t.id}
+            colonnes={[
+              { cle: 'reference', titre: 'Référence', className: 'mono', mobile: 'soustitre', cellule: (t) => <button type="button" className="lien" onClick={() => setDetail(t.id)}>{t.reference}</button> },
+              { cle: 'tournee', titre: 'Tournée', mobile: 'titre', cellule: (t) => <><strong>{t.titre}</strong>{t.codesPostaux?.length ? <div className="muted small">CP : {t.codesPostaux.slice(0, 6).join(', ')}{t.codesPostaux.length > 6 ? '…' : ''}</div> : null}</> },
+              { cle: 'date', titre: 'Date', className: 'small', cellule: (t) => <>{date(t.dateCollecte)}{t.heureDebut && <div className="muted">{t.heureDebut}–{t.heureFin}</div>}</> },
+              { cle: 'pays', titre: 'Pays', priorite: 'basse', cellule: (t) => libelle(PAYS, t.pays) },
+              { cle: 'inscrits', titre: 'Inscrits', cellule: (t) => `${t.nbInscrits}${t.capaciteMax ? ` / ${t.capaciteMax}` : ''}` },
+              { cle: 'coursier', titre: 'Coursier', className: 'small', cellule: (t) => (t.coursier ? nomComplet(t.coursier) : '—') },
+              { cle: 'statut', titre: 'Statut', cellule: (t) => <StatutBadge table={STATUTS_TOURNEE} valeur={t.statut} /> },
+              { cle: 'actions', cellule: (t) => (
+                <div className="actions">
+                  <button className="btn secondary sm" onClick={() => setStatut(t)}>Statut</button>
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer la tournée ${t.titre} ?`) && supprimer.mutate(t)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
@@ -210,16 +206,18 @@ function DialogueDetail({ id, onClose }: { id: string; onClose: () => void }) {
           </div>
           <div className="section-label">Demandes d'enlèvement ({t.demandes?.length ?? 0})</div>
           {!t.demandes?.length ? <p className="muted small">Aucune inscription</p> : (
-            <table>
-              <tbody>
-                {t.demandes.map((d) => (
-                  <tr key={d.id}>
-                    <td className="mono">{d.reference}</td><td>{d.contactNom}</td><td className="small">{d.adresse}</td>
-                    <td>{d.nbColis} colis</td><td><StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ResponsiveTable
+              sansEntete
+              lignes={t.demandes}
+              cleLigne={(d) => d.id}
+              colonnes={[
+                { cle: 'reference', className: 'mono', cellule: (d) => d.reference },
+                { cle: 'contact', libelle: 'Contact', cellule: (d) => d.contactNom },
+                { cle: 'adresse', libelle: 'Adresse', className: 'small', cellule: (d) => d.adresse },
+                { cle: 'colis', libelle: 'Colis', cellule: (d) => `${d.nbColis} colis` },
+                { cle: 'statut', cellule: (d) => <StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /> },
+              ]}
+            />
           )}
           <div className="section-label">Colis rattachés ({t.colis?.length ?? 0})</div>
           {!t.colis?.length ? <p className="muted small">Aucun colis</p> : (

@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
 import { MODES_TRANSPORT, TYPES_CONTENU, libelle } from '@/lib/labels';
 import { poids } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Service {
   id: string;
@@ -95,34 +96,29 @@ export default function ServicesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun service</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Code</th><th>Service</th><th>Mode</th><th>Délai</th><th>Poids</th><th>Coef. vol.</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((s) => (
-                  <tr key={s.id}>
-                    <td className="mono">{s.code}</td>
-                    <td><strong>{s.nom}</strong>{s.description && <div className="muted small">{s.description}</div>}</td>
-                    <td>{libelle(MODES_TRANSPORT, s.modeTransport)}</td>
-                    <td className="small">{s.delaiMinJours}–{s.delaiMaxJours} j{s.joursOuvresUniquement ? ' ouvrés' : ''}</td>
-                    <td className="small">{poids(s.poidsMinKg)} → {poids(s.poidsMaxKg)}</td>
-                    <td className="small">{s.coefficientVolumetrique}</td>
-                    <td>{s.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer"
-                          onClick={() => confirm(`Supprimer le service ${s.nom} et toute sa grille tarifaire ?`) && supprimer.mutate(s)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(s) => s.id}
+            colonnes={[
+              { cle: 'code', titre: 'Code', className: 'mono', mobile: 'soustitre', cellule: (s) => s.code },
+              { cle: 'service', titre: 'Service', mobile: 'titre', cellule: (s) => <><strong>{s.nom}</strong>{s.description && <div className="muted small">{s.description}</div>}</> },
+              { cle: 'mode', titre: 'Mode', cellule: (s) => libelle(MODES_TRANSPORT, s.modeTransport) },
+              { cle: 'delai', titre: 'Délai', className: 'small', cellule: (s) => `${s.delaiMinJours}–${s.delaiMaxJours} j${s.joursOuvresUniquement ? ' ouvrés' : ''}` },
+              { cle: 'poids', titre: 'Poids', className: 'small', cellule: (s) => `${poids(s.poidsMinKg)} → ${poids(s.poidsMaxKg)}` },
+              { cle: 'coef', titre: 'Coef. vol.', className: 'small', priorite: 'basse', cellule: (s) => s.coefficientVolumetrique },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (s) => (s.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>) },
+              { cle: 'actions', cellule: (s) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
+                    onClick={() => confirm(`Supprimer le service ${s.nom} et toute sa grille tarifaire ?`) && supprimer.mutate(s)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

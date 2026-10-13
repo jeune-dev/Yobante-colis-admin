@@ -10,6 +10,7 @@ import { CRENEAUX, OPTIONS_PAYS, PAYS, STATUTS_ENLEVEMENT, libelle } from '@/lib
 import { date, dateHeure, montant, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useCoursiersOptions, usePointsOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export interface Enlevement {
   id: string;
@@ -106,25 +107,20 @@ export default function EnlevementsPage() {
           <ErrorBox error={q.error} />
           <Card flush>
             {q.isLoading ? <Loader /> : !q.data?.demandes.length ? <Empty>Aucune demande d'enlèvement</Empty> : (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Référence</th><th>Contact</th><th>Adresse</th><th>Souhaité</th><th>Colis</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
-                  <tbody>
-                    {q.data.demandes.map((d) => (
-                      <tr key={d.id}>
-                        <td className="mono">{d.reference}</td>
-                        <td>{d.contactNom}<div className="muted small">{d.contactTelephone}</div></td>
-                        <td className="small">{d.adresse}<div className="muted">{d.ville?.nom} ({libelle(PAYS, d.pays)})</div></td>
-                        <td className="small">{date(d.dateSouhaitee)}<div className="muted">{libelle(CRENEAUX, d.creneau)}</div></td>
-                        <td>{d.nbColis}{d.emballageRequis && <> <Badge ton="orange">Emballage</Badge></>}</td>
-                        <td className="small">{d.coursier ? nomComplet(d.coursier) : <span className="muted">—</span>}</td>
-                        <td><StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /></td>
-                        <td>{actions(d)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveTable
+                lignes={q.data.demandes}
+                cleLigne={(d) => d.id}
+                colonnes={[
+                  { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (d) => d.reference },
+                  { cle: 'contact', titre: 'Contact', cellule: (d) => <>{d.contactNom}<div className="muted small">{d.contactTelephone}</div></> },
+                  { cle: 'adresse', titre: 'Adresse', className: 'small', cellule: (d) => <>{d.adresse}<div className="muted">{d.ville?.nom} ({libelle(PAYS, d.pays)})</div></> },
+                  { cle: 'souhaite', titre: 'Souhaité', className: 'small', cellule: (d) => <>{date(d.dateSouhaitee)}<div className="muted">{libelle(CRENEAUX, d.creneau)}</div></> },
+                  { cle: 'colis', titre: 'Colis', cellule: (d) => <>{d.nbColis}{d.emballageRequis && <> <Badge ton="orange">Emballage</Badge></>}</> },
+                  { cle: 'coursier', titre: 'Coursier', className: 'small', cellule: (d) => (d.coursier ? nomComplet(d.coursier) : <span className="muted">—</span>) },
+                  { cle: 'statut', titre: 'Statut', cellule: (d) => <StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /> },
+                  { cle: 'actions', cellule: (d) => actions(d) },
+                ]}
+              />
             )}
             <Pagination info={q.data?.pagination} onPage={setPage} />
           </Card>
@@ -170,27 +166,22 @@ function FeuilleDeRoute({ actions }: { actions: (d: Enlevement) => React.ReactNo
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.demandes.length ? <Empty>Aucun enlèvement prévu ce jour-là</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Créneau</th><th>Contact</th><th>Adresse</th><th>Colis</th><th>Coursier</th><th>Statut</th><th /></tr></thead>
-              <tbody>
-                {q.data.demandes.map((d) => (
-                  <tr key={d.id}>
-                    <td className="small">{libelle(CRENEAUX, d.creneau)}{d.heureSouhaitee && <div className="muted">vers {d.heureSouhaitee}</div>}</td>
-                    <td>{d.contactNom}<div className="muted small">{d.contactTelephone}</div></td>
-                    <td className="small">
-                      {d.adresse}{d.complementAdresse && `, ${d.complementAdresse}`}
-                      <div className="muted">{d.ville?.nom}{d.etage != null && ` · étage ${d.etage}${d.ascenseur ? ' (ascenseur)' : ''}`}</div>
-                    </td>
-                    <td>{d.nbColis}</td>
-                    <td className="small">{d.coursier ? nomComplet(d.coursier) : '—'}</td>
-                    <td><StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /></td>
-                    <td>{actions(d)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.demandes}
+            cleLigne={(d) => d.id}
+            colonnes={[
+              { cle: 'creneau', titre: 'Créneau', className: 'small', cellule: (d) => <>{libelle(CRENEAUX, d.creneau)}{d.heureSouhaitee && <div className="muted">vers {d.heureSouhaitee}</div>}</> },
+              { cle: 'contact', titre: 'Contact', cellule: (d) => <>{d.contactNom}<div className="muted small">{d.contactTelephone}</div></> },
+              { cle: 'adresse', titre: 'Adresse', className: 'small', cellule: (d) => <>
+                {d.adresse}{d.complementAdresse && `, ${d.complementAdresse}`}
+                <div className="muted">{d.ville?.nom}{d.etage != null && ` · étage ${d.etage}${d.ascenseur ? ' (ascenseur)' : ''}`}</div>
+              </> },
+              { cle: 'colis', titre: 'Colis', cellule: (d) => d.nbColis },
+              { cle: 'coursier', titre: 'Coursier', className: 'small', cellule: (d) => (d.coursier ? nomComplet(d.coursier) : '—') },
+              { cle: 'statut', titre: 'Statut', cellule: (d) => <StatutBadge table={STATUTS_ENLEVEMENT} valeur={d.statut} /> },
+              { cle: 'actions', cellule: (d) => actions(d) },
+            ]}
+          />
         )}
       </Card>
     </>

@@ -9,6 +9,7 @@ import { DEVISES, OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { date, montant, poids } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useServicesOptions, useZonesOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Tarif {
   id: string;
@@ -98,35 +99,30 @@ export default function TarifsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.tarifs.length ? <Empty>Aucun tarif</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Service</th><th>Corridor</th><th>Tranche</th><th className="right">Prix de base</th><th className="right">€/kg sup.</th><th className="right">Minimum</th><th>Validité</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.tarifs.map((t) => (
-                  <tr key={t.id}>
-                    <td>{t.service?.nom ?? '—'}</td>
-                    <td className="small">
-                      {libelle(PAYS, t.paysDepart)}{t.zoneDepart && ` (${t.zoneDepart.code})`} → {libelle(PAYS, t.paysArrivee)}{t.zoneArrivee && ` (${t.zoneArrivee.code})`}
-                    </td>
-                    <td className="small">{poids(t.poidsMinKg)} → {t.poidsMaxKg != null ? poids(t.poidsMaxKg) : '∞'}{t.poidsInclusKg != null && <div className="muted">{poids(t.poidsInclusKg)} inclus</div>}</td>
-                    <td className="right">{montant(t.prixBase, t.devise)}</td>
-                    <td className="right">{montant(t.prixParKgSupplementaire, t.devise)}</td>
-                    <td className="right">{montant(t.montantMinimum, t.devise)}</td>
-                    <td className="small">{t.dateDebutValidite || t.dateFinValidite ? `${date(t.dateDebutValidite)} → ${date(t.dateFinValidite)}` : 'Permanente'}</td>
-                    <td>{t.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm('Supprimer cette tranche ?') && supprimer.mutate(t)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.tarifs}
+            cleLigne={(t) => t.id}
+            colonnes={[
+              { cle: 'service', titre: 'Service', cellule: (t) => t.service?.nom ?? '—' },
+              { cle: 'corridor', titre: 'Corridor', className: 'small', mobile: 'soustitre', cellule: (t) => <>
+                {libelle(PAYS, t.paysDepart)}{t.zoneDepart && ` (${t.zoneDepart.code})`} → {libelle(PAYS, t.paysArrivee)}{t.zoneArrivee && ` (${t.zoneArrivee.code})`}
+              </> },
+              { cle: 'tranche', titre: 'Tranche', className: 'small', cellule: (t) => <>{poids(t.poidsMinKg)} → {t.poidsMaxKg != null ? poids(t.poidsMaxKg) : '∞'}{t.poidsInclusKg != null && <div className="muted">{poids(t.poidsInclusKg)} inclus</div>}</> },
+              { cle: 'base', titre: 'Prix de base', className: 'right', cellule: (t) => montant(t.prixBase, t.devise) },
+              { cle: 'kgsup', titre: '€/kg sup.', className: 'right', cellule: (t) => montant(t.prixParKgSupplementaire, t.devise) },
+              { cle: 'minimum', titre: 'Minimum', className: 'right', priorite: 'basse', cellule: (t) => montant(t.montantMinimum, t.devise) },
+              { cle: 'validite', titre: 'Validité', className: 'small', priorite: 'basse', cellule: (t) => (t.dateDebutValidite || t.dateFinValidite ? `${date(t.dateDebutValidite)} → ${date(t.dateFinValidite)}` : 'Permanente') },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (t) => (t.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>) },
+              { cle: 'actions', cellule: (t) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette tranche ?') && supprimer.mutate(t)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
@@ -239,18 +235,21 @@ function DialogueGrille({ services, zones, onClose }: { services: Opt[]; zones: 
           </select>
         </Field>
       </div>
-      <table>
-        <thead><tr><th>Poids min</th><th>Poids max</th><th>Prix base</th><th>Kg inclus</th><th>Prix/kg sup.</th><th>Minimum</th><th /></tr></thead>
-        <tbody>
-          {tranches.map((_, i) => (
-            <tr key={i}>
-              <td>{col('poidsMinKg', i)}</td><td>{col('poidsMaxKg', i)}</td><td>{col('prixBase', i)}</td>
-              <td>{col('poidsInclusKg', i)}</td><td>{col('prixParKgSupplementaire', i)}</td><td>{col('montantMinimum', i)}</td>
-              <td><button className="btn ghost sm" onClick={() => setTranches(tranches.filter((__, j) => j !== i))} disabled={tranches.length === 1}><Icon name="x" size={13} /></button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ResponsiveTable
+        lignes={tranches}
+        cleLigne={(_, i) => i}
+        colonnes={[
+          { cle: 'min', titre: 'Poids min', mobile: 'champ', cellule: (_, i) => col('poidsMinKg', i) },
+          { cle: 'max', titre: 'Poids max', cellule: (_, i) => col('poidsMaxKg', i) },
+          { cle: 'base', titre: 'Prix base', cellule: (_, i) => col('prixBase', i) },
+          { cle: 'inclus', titre: 'Kg inclus', cellule: (_, i) => col('poidsInclusKg', i) },
+          { cle: 'kgsup', titre: 'Prix/kg sup.', cellule: (_, i) => col('prixParKgSupplementaire', i) },
+          { cle: 'minimum', titre: 'Minimum', cellule: (_, i) => col('montantMinimum', i) },
+          { cle: 'actions', cellule: (_, i) => (
+            <button className="btn ghost sm" aria-label="Retirer la tranche" onClick={() => setTranches(tranches.filter((__, j) => j !== i))} disabled={tranches.length === 1}><Icon name="x" size={13} /></button>
+          ) },
+        ]}
+      />
       <button className="btn secondary sm" style={{ marginTop: 8 }}
         onClick={() => setTranches([...tranches, trancheVide(tranches[tranches.length - 1]?.poidsMaxKg ?? '')])}>
         <Icon name="plus" size={13} /> Ajouter une tranche
@@ -270,19 +269,16 @@ function DialogueAudit({ onClose }: { onClose: () => void }) {
       {q.isLoading ? <Loader /> : q.data?.conforme ? (
         <div className="alert info"><Icon name="check-circle" size={16} /><div>Grille conforme : chaque service actif couvre tous ses corridors.</div></div>
       ) : (
-        <table>
-          <thead><tr><th>Service</th><th>Corridor</th><th>Gravité</th><th>Problème</th></tr></thead>
-          <tbody>
-            {q.data?.anomalies.map((a, i) => (
-              <tr key={i}>
-                <td>{a.service}</td>
-                <td className="small">{a.corridor}</td>
-                <td><Badge ton={a.gravite === 'bloquante' ? 'rouge' : 'orange'}>{a.gravite}</Badge></td>
-                <td className="small">{a.probleme}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          lignes={q.data?.anomalies ?? []}
+          cleLigne={(_, i) => i}
+          colonnes={[
+            { cle: 'service', titre: 'Service', cellule: (a) => a.service },
+            { cle: 'corridor', titre: 'Corridor', className: 'small', mobile: 'soustitre', cellule: (a) => a.corridor },
+            { cle: 'gravite', titre: 'Gravité', mobile: 'badge', cellule: (a) => <Badge ton={a.gravite === 'bloquante' ? 'rouge' : 'orange'}>{a.gravite}</Badge> },
+            { cle: 'probleme', titre: 'Problème', className: 'small', cellule: (a) => a.probleme },
+          ]}
+        />
       )}
     </Modal>
   );

@@ -7,6 +7,7 @@ import Icon from '@/components/Icon';
 import { Card, Chips, Empty, ErrorBox, Loader, Modal, toast } from '@/components/ui';
 import { useInvalider } from '@/lib/hooks';
 import { EVENEMENTS_SUIVI, corrigerTexte } from '@/lib/labels';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Parametre {
   id: string;
@@ -145,10 +146,10 @@ function Panneau({
 /** Boutons « modifier / supprimer » d'une ligne. */
 function ActionsLigne({ onModifier, onSupprimer }: { onModifier: () => void; onSupprimer: () => void }) {
   return (
-    <td className="panneau-json-actions">
+    <>
       <button className="icone-btn" title="Modifier" aria-label="Modifier" onClick={onModifier}><Icon name="pencil" size={14} /></button>
       <button className="icone-btn danger" title="Supprimer" aria-label="Supprimer" onClick={onSupprimer}><Icon name="trash" size={14} /></button>
-    </td>
+    </>
   );
 }
 
@@ -199,22 +200,23 @@ function GrilleJson({ cle, titre, valeur, editable, onChange }: PropsEditeur) {
         }
         rendu={(complet) =>
           lignes.length ? (
-            <table>
-              <thead>
-                <tr>
-                  {colonnes.map((k) => <th key={k} className={estNombre(k) ? 'num' : undefined}>{libelleColonne(k)}</th>)}
-                  {complet && editable && <th aria-label="Actions" />}
-                </tr>
-              </thead>
-              <tbody>
-                {(complet ? lignes : lignes.slice(0, APERCU)).map((l, i) => (
-                  <tr key={i}>
-                    {colonnes.map((k) => <td key={k} className={estNombre(k) ? 'num' : undefined}>{formater(l[k])}</td>)}
-                    {complet && editable && <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(lignes.filter((_, j) => j !== i))} />}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ResponsiveTable
+              lignes={complet ? lignes : lignes.slice(0, APERCU)}
+              cleLigne={(_, i) => i}
+              colonnes={[
+                ...colonnes.map((k) => ({
+                  cle: k,
+                  titre: libelleColonne(k),
+                  className: estNombre(k) ? 'num' : undefined,
+                  cellule: (l: (typeof lignes)[number]) => formater(l[k]),
+                })),
+                ...(complet && editable ? [{
+                  cle: 'actions',
+                  className: 'panneau-json-actions',
+                  cellule: (_: unknown, i: number) => <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(lignes.filter((_, j) => j !== i))} />,
+                }] : []),
+              ]}
+            />
           ) : (
             <div className="panneau-json-vide">Aucune ligne pour le moment</div>
           )
@@ -269,19 +271,23 @@ function ListeJson({ cle, titre, valeur, editable, onChange }: PropsEditeur) {
         }
         rendu={(complet) =>
           liste.length ? (
-            <table>
-              <tbody>
-                {(complet ? liste : liste.slice(0, APERCU)).map((x, i) => (
-                  <tr key={i}>
-                    <td>
-                      {def.options?.[x] ?? x}
-                      {def.options && <span className="code-valeur">{x}</span>}
-                    </td>
-                    {complet && editable && <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(liste.filter((_, j) => j !== i))} />}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ResponsiveTable
+              variante="liste"
+              sansEntete
+              lignes={complet ? liste : liste.slice(0, APERCU)}
+              cleLigne={(_, i) => i}
+              colonnes={[
+                { cle: 'valeur', cellule: (x) => <>
+                  {def.options?.[x] ?? x}
+                  {def.options && <span className="code-valeur">{x}</span>}
+                </> },
+                ...(complet && editable ? [{
+                  cle: 'actions',
+                  className: 'panneau-json-actions',
+                  cellule: (_: unknown, i: number) => <ActionsLigne onModifier={() => setEdition({ index: i })} onSupprimer={() => ecrire(liste.filter((_, j) => j !== i))} />,
+                }] : []),
+              ]}
+            />
           ) : (
             <div className="panneau-json-vide">Aucun élément pour le moment</div>
           )

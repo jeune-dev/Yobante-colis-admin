@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Pagination, toast } from '@/compo
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
 import { routeDepuisLien } from '@/lib/liens';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export interface Notification {
   id: string;
@@ -56,27 +57,26 @@ export default function NotificationsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.notifications.length ? <Empty>Aucune notification</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <tbody>
-                {q.data.notifications.map((n) => (
-                  <tr key={n.id} className="cliquable" onClick={() => ouvrir(n)} style={{ fontWeight: n.isRead ? 400 : 600 }}>
-                    <td style={{ width: 14 }}>{!n.isRead && <span className="dot" />}</td>
-                    <td>
-                      {n.titre} {n.niveau === 'critique' && <Badge ton="rouge">Urgent</Badge>}
-                      <div className="small muted" style={{ fontWeight: 400 }}>{n.message}</div>
-                    </td>
-                    <td className="small muted" style={{ whiteSpace: 'nowrap' }}>{dateHeure(n.createdAt)}</td>
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <button className="btn ghost sm" title="Supprimer" onClick={() => agir(() => api.delete(`/client/notifications/${n.id}`))}>
-                        <Icon name="trash-2" size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            sansEntete
+            lignes={q.data.notifications}
+            cleLigne={(n) => n.id}
+            onLigne={ouvrir}
+            classeLigne={(n) => (n.isRead ? undefined : 'non-lue')}
+            colonnes={[
+              { cle: 'pastille', mobile: 'masque', className: 'col-pastille', cellule: (n) => !n.isRead && <span className="dot" /> },
+              { cle: 'notification', mobile: 'titre', cellule: (n) => <>
+                {n.titre} {n.niveau === 'critique' && <Badge ton="rouge">Urgent</Badge>}
+                <div className="small muted message-notif">{n.message}</div>
+              </> },
+              { cle: 'date', mobile: 'soustitre', className: 'small muted nowrap', cellule: (n) => dateHeure(n.createdAt) },
+              { cle: 'actions', cellule: (n) => (
+                <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => agir(() => api.delete(`/client/notifications/${n.id}`))}>
+                  <Icon name="trash-2" size={14} />
+                </button>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

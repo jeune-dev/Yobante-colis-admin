@@ -6,6 +6,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@
 import { PAYS, libelle } from '@/lib/labels';
 import { date, nomComplet } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -41,28 +42,22 @@ export default function ClientsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.utilisateurs.length ? <Empty>Aucun client</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Client</th><th>Contact</th><th>Pays</th><th>Compte</th><th>État</th><th>Inscrit le</th></tr>
-              </thead>
-              <tbody>
-                {q.data.utilisateurs.map((u) => (
-                  <tr key={u.id} className="cliquable" onClick={() => navigate(`/clients/${u.id}`)}>
-                    <td>
-                      <strong>{nomComplet(u)}</strong>
-                      {u.raisonSociale && <div className="muted small">{u.raisonSociale}</div>}
-                    </td>
-                    <td className="small">{u.email}<div className="muted">{u.telephone}</div></td>
-                    <td>{libelle(PAYS, u.pays)}</td>
-                    <td>{u.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>}</td>
-                    <td>{u.isActive ? <Badge ton="vert">Actif</Badge> : <Badge ton="rouge">Suspendu</Badge>}</td>
-                    <td className="small muted">{date(u.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.utilisateurs}
+            cleLigne={(u) => u.id}
+            onLigne={(u) => navigate(`/clients/${u.id}`)}
+            colonnes={[
+              { cle: 'client', titre: 'Client', cellule: (u) => <>
+                <strong>{nomComplet(u)}</strong>
+                {u.raisonSociale && <div className="muted small">{u.raisonSociale}</div>}
+              </> },
+              { cle: 'contact', titre: 'Contact', className: 'small', cellule: (u) => <>{u.email}<div className="muted">{u.telephone}</div></> },
+              { cle: 'pays', titre: 'Pays', priorite: 'basse', cellule: (u) => libelle(PAYS, u.pays) },
+              { cle: 'compte', titre: 'Compte', cellule: (u) => (u.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (u) => (u.isActive ? <Badge ton="vert">Actif</Badge> : <Badge ton="rouge">Suspendu</Badge>) },
+              { cle: 'inscrit', titre: 'Inscrit le', className: 'small muted', priorite: 'basse', cellule: (u) => date(u.createdAt) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

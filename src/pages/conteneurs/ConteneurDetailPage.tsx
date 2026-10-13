@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Colis, Rotation } from '@/api/types';
 import Icon from '@/components/Icon';
@@ -10,6 +10,7 @@ import { date, ouvrirDocument, poids } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
 import { DEVISES } from '@/lib/labels';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export default function ConteneurDetailPage() {
   const { id = '' } = useParams();
@@ -73,33 +74,24 @@ export default function ConteneurDetailPage() {
       <div className="grid grid-main-side">
         <Card title={`Colis chargés (${r.colis?.length ?? 0})`} flush>
           {!r.colis?.length ? <Empty>Aucun colis chargé</Empty> : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Référence</th><th>Expéditeur</th><th>Destinataire</th><th>Destination</th><th>Poids</th><th>Statut</th><th /></tr>
-                </thead>
-                <tbody>
-                  {r.colis.map((c) => (
-                    <tr key={c.id}>
-                      <td className="mono"><a onClick={() => navigate(`/colis/${c.id}`)} style={{ cursor: 'pointer' }}>{c.reference}</a></td>
-                      <td>{c.expediteurNom}</td>
-                      <td>{c.destinataireNom}</td>
-                      <td className="small">{c.villeArrivee?.nom ?? '—'}</td>
-                      <td className="small">{poids(c.poidsFactureKg)}</td>
-                      <td><StatutBadge table={STATUTS_COLIS} valeur={c.statut} /></td>
-                      <td>
-                        {r.estOuverteAuChargement && (
-                          <button className="btn ghost sm" title="Retirer du conteneur"
-                            onClick={() => confirm(`Retirer ${c.reference} du conteneur ?`) && decharger.mutate([c.id])}>
-                            <Icon name="trash-2" size={14} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              lignes={r.colis}
+              cleLigne={(c) => c.id}
+              colonnes={[
+                { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (c) => <Link to={`/colis/${c.id}`}>{c.reference}</Link> },
+                { cle: 'expediteur', titre: 'Expéditeur', cellule: (c) => c.expediteurNom },
+                { cle: 'destinataire', titre: 'Destinataire', cellule: (c) => c.destinataireNom },
+                { cle: 'destination', titre: 'Destination', className: 'small', cellule: (c) => c.villeArrivee?.nom ?? '—' },
+                { cle: 'poids', titre: 'Poids', className: 'small', cellule: (c) => poids(c.poidsFactureKg) },
+                { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
+                { cle: 'actions', cellule: (c) => r.estOuverteAuChargement && (
+                  <button className="btn ghost sm" title="Retirer du conteneur" aria-label="Retirer du conteneur"
+                    onClick={() => confirm(`Retirer ${c.reference} du conteneur ?`) && decharger.mutate([c.id])}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                ) },
+              ]}
+            />
           )}
         </Card>
 
@@ -211,23 +203,19 @@ function DialogueChargement({ rotation, onClose }: { rotation: Rotation; onClose
       <p className="small muted" style={{ marginBottom: 10 }}>Colis réceptionnés sur ce trajet et pas encore affectés à un conteneur.</p>
       <ErrorBox error={q.error} />
       {q.isLoading ? <Loader /> : !q.data?.colis.length ? <Empty>Aucun colis prêt à embarquer</Empty> : (
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th /><th>Référence</th><th>Destinataire</th><th>Destination</th><th>Poids</th><th>Statut</th></tr></thead>
-            <tbody>
-              {q.data.colis.map((c) => (
-                <tr key={c.id} className="cliquable" onClick={() => basculer(c.id)}>
-                  <td><input type="checkbox" readOnly checked={choix.includes(c.id)} /></td>
-                  <td className="mono">{c.reference}</td>
-                  <td>{c.destinataireNom}</td>
-                  <td className="small">{c.villeArrivee?.nom ?? '—'}</td>
-                  <td className="small">{poids(c.poidsFactureKg)}</td>
-                  <td><StatutBadge table={STATUTS_COLIS} valeur={c.statut} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          lignes={q.data.colis}
+          cleLigne={(c) => c.id}
+          onLigne={(c) => basculer(c.id)}
+          colonnes={[
+            { cle: 'choix', mobile: 'selection', cellule: (c) => <input type="checkbox" checked={choix.includes(c.id)} onChange={() => basculer(c.id)} aria-label={`Choisir ${c.reference}`} /> },
+            { cle: 'reference', titre: 'Référence', mobile: 'titre', className: 'mono', cellule: (c) => c.reference },
+            { cle: 'destinataire', titre: 'Destinataire', cellule: (c) => c.destinataireNom },
+            { cle: 'destination', titre: 'Destination', className: 'small', cellule: (c) => c.villeArrivee?.nom ?? '—' },
+            { cle: 'poids', titre: 'Poids', className: 'small', cellule: (c) => poids(c.poidsFactureKg) },
+            { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
+          ]}
+        />
       )}
     </Modal>
   );

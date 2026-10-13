@@ -6,6 +6,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, St
 import { PRIORITES, STATUTS_RECLAMATION, TYPES_RECLAMATION, libelle } from '@/lib/labels';
 import { date, nomComplet, montant } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Statistiques {
   parStatut: { statut: string; total: number }[];
@@ -75,29 +76,23 @@ export default function ReclamationsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.reclamations.length ? <Empty>{vue === 'ouvertes' ? 'Aucune réclamation en cours de traitement — voir « Toutes »' : 'Aucune réclamation'}</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Référence</th><th>Objet</th><th>Type</th><th>Client</th><th>Colis</th><th className="right">Réclamé</th><th>Agent</th><th>Priorité</th><th>Statut</th><th>Échéance</th></tr>
-              </thead>
-              <tbody>
-                {q.data.reclamations.map((r) => (
-                  <tr key={r.id} className="cliquable" onClick={() => navigate(`/reclamations/${r.id}`)}>
-                    <td className="mono">{r.reference}</td>
-                    <td>{r.objet}</td>
-                    <td className="small">{libelle(TYPES_RECLAMATION, r.type)}</td>
-                    <td>{nomComplet(r.client)}</td>
-                    <td className="mono">{r.colis?.reference ?? '—'}</td>
-                    <td className="right">{montant(r.montantReclame, r.devise)}</td>
-                    <td className="small">{r.agentAssigne ? nomComplet(r.agentAssigne) : <span className="muted">—</span>}</td>
-                    <td><StatutBadge table={PRIORITES} valeur={r.priorite} /></td>
-                    <td><StatutBadge table={STATUTS_RECLAMATION} valeur={r.statut} /></td>
-                    <td className="small muted">{date(r.dateEcheance)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.reclamations}
+            cleLigne={(r) => r.id}
+            onLigne={(r) => navigate(`/reclamations/${r.id}`)}
+            colonnes={[
+              { cle: 'reference', titre: 'Référence', className: 'mono', mobile: 'soustitre', cellule: (r) => r.reference },
+              { cle: 'objet', titre: 'Objet', mobile: 'titre', cellule: (r) => r.objet },
+              { cle: 'type', titre: 'Type', className: 'small', cellule: (r) => libelle(TYPES_RECLAMATION, r.type) },
+              { cle: 'client', titre: 'Client', cellule: (r) => nomComplet(r.client) },
+              { cle: 'colis', titre: 'Colis', className: 'mono', priorite: 'basse', cellule: (r) => r.colis?.reference ?? '—' },
+              { cle: 'reclame', titre: 'Réclamé', className: 'right', cellule: (r) => montant(r.montantReclame, r.devise) },
+              { cle: 'agent', titre: 'Agent', className: 'small', priorite: 'basse', cellule: (r) => (r.agentAssigne ? nomComplet(r.agentAssigne) : <span className="muted">—</span>) },
+              { cle: 'priorite', titre: 'Priorité', cellule: (r) => <StatutBadge table={PRIORITES} valeur={r.priorite} /> },
+              { cle: 'statut', titre: 'Statut', cellule: (r) => <StatutBadge table={STATUTS_RECLAMATION} valeur={r.statut} /> },
+              { cle: 'echeance', titre: 'Échéance', className: 'small muted', cellule: (r) => date(r.dateEcheance) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

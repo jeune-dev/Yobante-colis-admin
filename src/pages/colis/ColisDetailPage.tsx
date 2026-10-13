@@ -13,6 +13,7 @@ import { useAction, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
 import type { PointRef, Personne } from '@/api/types';
 import { estAdmin, useAuth } from '@/auth/store';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type Dialogue =
   | null | 'valider' | 'refuser' | 'proposition' | 'evenement' | 'pesee' | 'note'
@@ -181,25 +182,16 @@ export default function ColisDetailPage() {
           </div>
 
           <Card title={`Pièces (${c.pieces?.length ?? 0})`} flush>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>N° de pièce</th><th>Désignation</th><th>Poids</th><th>Dimensions (cm)</th></tr>
-                </thead>
-                <tbody>
-                  {c.pieces?.map((p) => (
-                    <tr key={p.id}>
-                      <td className="mono">{p.numeroSuivi ?? '—'}</td>
-                      <td>{p.designation || p.typeEmballage || '—'}</td>
-                      <td>{poids(p.poidsKg)}</td>
-                      <td className="small">
-                        {p.longueurCm ? `${p.longueurCm} × ${p.largeurCm} × ${p.hauteurCm}` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              lignes={c.pieces ?? []}
+              cleLigne={(p) => p.id}
+              colonnes={[
+                { cle: 'numero', titre: 'N° de pièce', className: 'mono', cellule: (p) => p.numeroSuivi ?? '—' },
+                { cle: 'designation', titre: 'Désignation', cellule: (p) => p.designation || p.typeEmballage || '—' },
+                { cle: 'poids', titre: 'Poids', cellule: (p) => poids(p.poidsKg) },
+                { cle: 'dimensions', titre: 'Dimensions (cm)', className: 'small', cellule: (p) => (p.longueurCm ? `${p.longueurCm} × ${p.largeurCm} × ${p.hauteurCm}` : '—') },
+              ]}
+            />
             <div className="card-body kv">
               <KV label="Poids réel">{poids(c.poidsReelKg)}</KV>
               <KV label="Poids volumétrique">{poids(c.poidsVolumetriqueKg)}</KV>
@@ -210,23 +202,16 @@ export default function ColisDetailPage() {
 
           {!!c.lignesForfait?.length && (
             <Card title="Articles (grille forfaitaire)" flush>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr><th>Article</th><th>Qté</th><th className="right">Prix unitaire</th><th className="right">Montant</th></tr>
-                  </thead>
-                  <tbody>
-                    {c.lignesForfait.map((l, i) => (
-                      <tr key={i}>
-                        <td>{l.libelle}</td>
-                        <td>{l.quantite}</td>
-                        <td className="right">{montant(l.prixUnitaire, c.devise)}</td>
-                        <td className="right">{montant(l.montant, c.devise)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveTable
+                lignes={c.lignesForfait}
+                cleLigne={(_, i) => i}
+                colonnes={[
+                  { cle: 'article', titre: 'Article', cellule: (l) => l.libelle },
+                  { cle: 'quantite', titre: 'Qté', cellule: (l) => l.quantite },
+                  { cle: 'prix', titre: 'Prix unitaire', className: 'right', cellule: (l) => montant(l.prixUnitaire, c.devise) },
+                  { cle: 'montant', titre: 'Montant', className: 'right', cellule: (l) => montant(l.montant, c.devise) },
+                ]}
+              />
             </Card>
           )}
 

@@ -6,6 +6,7 @@ import type { Client, Colis, Personne } from '@/api/types';
 import { Badge, Card, Empty, ErrorBox, Loader, Stat, StatutBadge } from '@/components/ui';
 import { PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet } from '@/lib/format';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface PointsAttention {
   colisEnRetard: { id: string; reference: string; dateLivraisonEstimee?: string }[];
@@ -90,24 +91,18 @@ export default function DashboardPage() {
           ) : !derniers.data?.length ? (
             <Empty>Aucune expédition</Empty>
           ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Référence</th><th>Client</th><th>Trajet</th><th>Statut</th><th>Créé le</th></tr>
-                </thead>
-                <tbody>
-                  {derniers.data.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
-                      <td className="mono">{c.reference}</td>
-                      <td>{c.client ? `${c.client.prenom} ${c.client.nom}` : c.expediteurNom}</td>
-                      <td className="small">{c.villeDepart?.nom ?? c.paysDepart} → {c.villeArrivee?.nom ?? c.paysArrivee}</td>
-                      <td><StatutBadge table={STATUTS_COLIS} valeur={c.statut} /></td>
-                      <td className="small muted">{date(c.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              lignes={derniers.data}
+              cleLigne={(c) => c.id}
+              onLigne={(c) => navigate(`/colis/${c.id}`)}
+              colonnes={[
+                { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (c) => c.reference },
+                { cle: 'client', titre: 'Client', cellule: (c) => (c.client ? `${c.client.prenom} ${c.client.nom}` : c.expediteurNom) },
+                { cle: 'trajet', titre: 'Trajet', className: 'small', cellule: (c) => <>{c.villeDepart?.nom ?? c.paysDepart} → {c.villeArrivee?.nom ?? c.paysArrivee}</> },
+                { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
+                { cle: 'cree', titre: 'Créé le', className: 'small muted', priorite: 'basse', cellule: (c) => date(c.createdAt) },
+              ]}
+            />
           )}
         </Card>
 

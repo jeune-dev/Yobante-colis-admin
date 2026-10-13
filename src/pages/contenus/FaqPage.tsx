@@ -6,6 +6,7 @@ import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Chips, Empty, ErrorBox, Loader } from '@/components/ui';
 import { RUBRIQUES_FAQ, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Question { id: string; question: string; reponse: string; rubrique: string; ordre: number; isActive: boolean }
 
@@ -45,33 +46,28 @@ export default function FaqPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune question</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>#</th><th>Question</th><th>Rubrique</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((x) => (
-                  <tr key={x.id}>
-                    <td className="muted small">{x.ordre}</td>
-                    <td style={{ maxWidth: 560 }}>
-                      <strong>{x.question}</strong>
-                      <div className="small muted">{x.reponse.length > 180 ? `${x.reponse.slice(0, 180)}…` : x.reponse}</div>
-                    </td>
-                    <td>{libelle(RUBRIQUES_FAQ, x.rubrique)}</td>
-                    <td>{x.isActive ? <Badge ton="vert">Publiée</Badge> : <Badge>Masquée</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(x)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(x)}>{x.isActive ? 'Masquer' : 'Publier'}</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm('Supprimer cette question ?') && supprimer.mutate(x)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(x) => x.id}
+            colonnes={[
+              { cle: 'ordre', titre: '#', className: 'muted small', mobile: 'masque', cellule: (x) => x.ordre },
+              { cle: 'question', titre: 'Question', mobile: 'titre', className: 'texte-limite-l', cellule: (x) => <>
+                <strong>{x.question}</strong>
+                <div className="small muted">{x.reponse.length > 180 ? `${x.reponse.slice(0, 180)}…` : x.reponse}</div>
+              </> },
+              { cle: 'rubrique', titre: 'Rubrique', cellule: (x) => libelle(RUBRIQUES_FAQ, x.rubrique) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (x) => (x.isActive ? <Badge ton="vert">Publiée</Badge> : <Badge>Masquée</Badge>) },
+              { cle: 'actions', cellule: (x) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(x)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(x)}>{x.isActive ? 'Masquer' : 'Publier'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette question ?') && supprimer.mutate(x)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

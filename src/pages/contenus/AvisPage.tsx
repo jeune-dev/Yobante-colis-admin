@@ -9,6 +9,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, Pagination, StatutBadge } from '@
 import { STATUTS_AVIS } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Avis {
   id: string;
@@ -72,36 +73,31 @@ export default function AvisPage() {
             </div>
           </Empty>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Note</th><th>Avis</th><th>Client</th><th>Colis</th><th>Date</th><th>Statut</th><th /></tr></thead>
-              <tbody>
-                {q.data.avis.map((a) => (
-                  <tr key={a.id}>
-                    <td><Etoiles note={a.note} /></td>
-                    <td style={{ maxWidth: 420 }}>
-                      {a.titre && <strong>{a.titre}<br /></strong>}
-                      <span className="small">{a.commentaire || <span className="muted">Sans commentaire</span>}</span>
-                      {a.reponse && <div className="small" style={{ marginTop: 4, color: 'var(--primary)' }}>↳ {a.reponse}</div>}
-                      {a.motifRejet && <div className="small muted">Rejet : {a.motifRejet}</div>}
-                    </td>
-                    <td>{a.client ? <Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link> : '—'}</td>
-                    <td className="mono">{a.colis ? <Link to={`/colis/${a.colis.id}`}>{a.colis.reference}</Link> : '—'}</td>
-                    <td className="small muted">{dateHeure(a.createdAt)}</td>
-                    <td><StatutBadge table={STATUTS_AVIS} valeur={a.statut} /></td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn secondary sm" onClick={() => setModeration(a)}>Modérer</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm('Supprimer définitivement cet avis ?') && supprimer.mutate(a)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.avis}
+            cleLigne={(a) => a.id}
+            colonnes={[
+              { cle: 'note', titre: 'Note', mobile: 'badge', cellule: (a) => <Etoiles note={a.note} /> },
+              { cle: 'avis', titre: 'Avis', mobile: 'titre', className: 'texte-limite', cellule: (a) => <>
+                {a.titre && <strong>{a.titre}<br /></strong>}
+                <span className="small">{a.commentaire || <span className="muted">Sans commentaire</span>}</span>
+                {a.reponse && <div className="small reponse-avis">↳ {a.reponse}</div>}
+                {a.motifRejet && <div className="small muted">Rejet : {a.motifRejet}</div>}
+              </> },
+              { cle: 'client', titre: 'Client', cellule: (a) => (a.client ? <Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link> : '—') },
+              { cle: 'colis', titre: 'Colis', className: 'mono', cellule: (a) => (a.colis ? <Link to={`/colis/${a.colis.id}`}>{a.colis.reference}</Link> : '—') },
+              { cle: 'date', titre: 'Date', className: 'small muted', priorite: 'basse', cellule: (a) => dateHeure(a.createdAt) },
+              { cle: 'statut', titre: 'Statut', mobile: 'champ', cellule: (a) => <StatutBadge table={STATUTS_AVIS} valeur={a.statut} /> },
+              { cle: 'actions', cellule: (a) => (
+                <div className="actions">
+                  <button className="btn secondary sm" onClick={() => setModeration(a)}>Modérer</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer définitivement cet avis ?') && supprimer.mutate(a)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

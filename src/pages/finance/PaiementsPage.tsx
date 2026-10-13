@@ -10,6 +10,7 @@ import { METHODES_PAIEMENT, STATUTS_PAIEMENT, libelle } from '@/lib/labels';
 import { dateHeure, montant, nomComplet, telecharger } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
 import { usePointsOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface StatsPaiements {
   parMethode: { methode: string; devise: string; nombre: number; total: number }[];
@@ -83,37 +84,30 @@ export default function PaiementsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.paiements.length ? <Empty>Aucun paiement</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Référence</th><th>Client</th><th>Facture</th><th>Méthode</th><th className="right">Montant</th><th>Statut</th><th>Encaissé par</th><th>Date</th><th /></tr>
-              </thead>
-              <tbody>
-                {q.data.paiements.map((p) => (
-                  <tr key={p.id}>
-                    <td className="mono"><a style={{ cursor: 'pointer' }} onClick={() => setDetail(p.id)}>{p.reference}</a></td>
-                    <td>{nomComplet(p.User)}</td>
-                    <td className="mono">{p.facture ? <Link to={`/factures/${p.facture.id}`}>{p.facture.reference}</Link> : '—'}</td>
-                    <td>{libelle(METHODES_PAIEMENT, p.methode)}</td>
-                    <td className="right">{montant(p.montant, p.devise)}</td>
-                    <td><StatutBadge table={STATUTS_PAIEMENT} valeur={p.statut} /></td>
-                    <td className="small">{p.enregistrePar ? nomComplet(p.enregistrePar) : p.pointEncaissement?.nom ?? 'En ligne'}</td>
-                    <td className="small muted">{dateHeure(p.payeAt ?? p.createdAt)}</td>
-                    <td>
-                      <div className="actions">
-                        {['succes', 'partiel'].includes(p.statut) && (
-                          <button className="btn secondary sm" onClick={() => setAction({ type: 'rembourser', paiement: p })}>Rembourser</button>
-                        )}
-                        {p.statut === 'en_attente' && (
-                          <button className="btn ghost sm" onClick={() => setAction({ type: 'echec', paiement: p })}>Échec</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.paiements}
+            cleLigne={(p) => p.id}
+            colonnes={[
+              { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (p) => <button type="button" className="lien" onClick={() => setDetail(p.id)}>{p.reference}</button> },
+              { cle: 'client', titre: 'Client', cellule: (p) => nomComplet(p.User) },
+              { cle: 'facture', titre: 'Facture', className: 'mono', cellule: (p) => (p.facture ? <Link to={`/factures/${p.facture.id}`}>{p.facture.reference}</Link> : '—') },
+              { cle: 'methode', titre: 'Méthode', cellule: (p) => libelle(METHODES_PAIEMENT, p.methode) },
+              { cle: 'montant', titre: 'Montant', className: 'right', cellule: (p) => montant(p.montant, p.devise) },
+              { cle: 'statut', titre: 'Statut', cellule: (p) => <StatutBadge table={STATUTS_PAIEMENT} valeur={p.statut} /> },
+              { cle: 'encaisse', titre: 'Encaissé par', className: 'small', priorite: 'basse', cellule: (p) => (p.enregistrePar ? nomComplet(p.enregistrePar) : p.pointEncaissement?.nom ?? 'En ligne') },
+              { cle: 'date', titre: 'Date', className: 'small muted', priorite: 'basse', cellule: (p) => dateHeure(p.payeAt ?? p.createdAt) },
+              { cle: 'actions', cellule: (p) => (
+                <div className="actions">
+                  {['succes', 'partiel'].includes(p.statut) && (
+                    <button className="btn secondary sm" onClick={() => setAction({ type: 'rembourser', paiement: p })}>Rembourser</button>
+                  )}
+                  {p.statut === 'en_attente' && (
+                    <button className="btn ghost sm" onClick={() => setAction({ type: 'echec', paiement: p })}>Échec</button>
+                  )}
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
@@ -222,19 +216,16 @@ function DialogueCaisse({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           {!q.data.operations.length ? <Empty>Aucune opération ce jour-là</Empty> : (
-            <table>
-              <thead><tr><th>Heure</th><th>Référence</th><th>Méthode</th><th className="right">Montant</th></tr></thead>
-              <tbody>
-                {q.data.operations.map((o) => (
-                  <tr key={o.id}>
-                    <td className="small">{dateHeure(o.payeAt ?? o.createdAt)}</td>
-                    <td className="mono">{o.reference}</td>
-                    <td>{libelle(METHODES_PAIEMENT, o.methode)}</td>
-                    <td className="right">{montant(o.montant, o.devise)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ResponsiveTable
+              lignes={q.data.operations}
+              cleLigne={(o) => o.id}
+              colonnes={[
+                { cle: 'heure', titre: 'Heure', className: 'small', mobile: 'soustitre', cellule: (o) => dateHeure(o.payeAt ?? o.createdAt) },
+                { cle: 'reference', titre: 'Référence', className: 'mono', mobile: 'titre', cellule: (o) => o.reference },
+                { cle: 'methode', titre: 'Méthode', cellule: (o) => libelle(METHODES_PAIEMENT, o.methode) },
+                { cle: 'montant', titre: 'Montant', className: 'right', cellule: (o) => montant(o.montant, o.devise) },
+              ]}
+            />
           )}
         </>
       )}

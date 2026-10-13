@@ -7,6 +7,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, StatutBadge } from '@/components/
 import { EMPLACEMENTS_ANNONCE, NIVEAUX_ANNONCE, libelle } from '@/lib/labels';
 import { dateHeure } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Annonce {
   id: string;
@@ -84,37 +85,32 @@ export default function AnnoncesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune annonce</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th /><th>Annonce</th><th>Emplacement</th><th>Niveau</th><th>Période</th><th>Priorité</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((a) => (
-                  <tr key={a.id}>
-                    <td style={{ width: 60 }}>{a.imageUrl && <img src={a.imageUrl} alt="" style={{ width: 52, height: 36, objectFit: 'cover', borderRadius: 6 }} />}</td>
-                    <td>
-                      <strong>{a.titre}</strong>
-                      <div className="muted small" style={{ maxWidth: 420 }}>{a.message.length > 140 ? `${a.message.slice(0, 140)}…` : a.message}</div>
-                    </td>
-                    <td>{libelle(EMPLACEMENTS_ANNONCE, a.emplacement)}</td>
-                    <td><StatutBadge table={NIVEAUX_ANNONCE} valeur={a.niveau} /></td>
-                    <td className="small">{a.dateDebut || a.dateFin ? `${dateHeure(a.dateDebut)} → ${dateHeure(a.dateFin)}` : 'Permanente'}</td>
-                    <td>{a.priorite}</td>
-                    <td>{a.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Image" onClick={() => setImage(a)}><Icon name="image" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Supprimer « ${a.titre} » ?`) && supprimer.mutate(a)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(a) => a.id}
+            colonnes={[
+              { cle: 'image', mobile: 'masque', className: 'col-vignette', cellule: (a) => a.imageUrl && <img className="vignette" src={a.imageUrl} alt="" /> },
+              { cle: 'annonce', titre: 'Annonce', mobile: 'titre', cellule: (a) => <>
+                <strong>{a.titre}</strong>
+                <div className="muted small texte-limite">{a.message.length > 140 ? `${a.message.slice(0, 140)}…` : a.message}</div>
+              </> },
+              { cle: 'emplacement', titre: 'Emplacement', cellule: (a) => libelle(EMPLACEMENTS_ANNONCE, a.emplacement) },
+              { cle: 'niveau', titre: 'Niveau', cellule: (a) => <StatutBadge table={NIVEAUX_ANNONCE} valeur={a.niveau} /> },
+              { cle: 'periode', titre: 'Période', className: 'small', cellule: (a) => (a.dateDebut || a.dateFin ? `${dateHeure(a.dateDebut)} → ${dateHeure(a.dateFin)}` : 'Permanente') },
+              { cle: 'priorite', titre: 'Priorité', priorite: 'basse', cellule: (a) => a.priorite },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (a) => (a.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>) },
+              { cle: 'actions', cellule: (a) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Image" aria-label="Image" onClick={() => setImage(a)}><Icon name="image" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer « ${a.titre} » ?`) && supprimer.mutate(a)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

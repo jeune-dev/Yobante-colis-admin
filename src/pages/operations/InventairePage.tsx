@@ -6,6 +6,7 @@ import { Badge, Card, Chips, Empty, ErrorBox, Field, Loader, Stat, toast } from 
 import { CATEGORIES_COURT, ETATS_MARCHANDISE, libelle } from '@/lib/labels';
 import { ouvrirDocument, telecharger } from '@/lib/format';
 import { useRotationsOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Inventaire {
   titre: string;
@@ -88,35 +89,32 @@ export default function InventairePage() {
           <div className="grid grid-main-side">
             <Card title="Détail par colis" flush>
               {!q.data.lignes.length ? <Empty>Aucun produit</Empty> : (
-                <div className="table-wrap">
-                  <table>
-                    <thead><tr><th>Colis</th><th>Cat.</th><th>Produit</th><th>Qté</th><th>État</th><th>Destinataire</th><th>Destination</th></tr></thead>
-                    <tbody>
-                      {q.data.lignes.map((l, i) => (
-                        <tr key={i}>
-                          <td className="mono">{l.reference}</td>
-                          <td><Badge ton="bleu">{CATEGORIES_COURT[l.categorie] ?? l.categorie}</Badge></td>
-                          <td>{l.produit}</td>
-                          <td>{l.quantite}</td>
-                          <td>{libelle(ETATS_MARCHANDISE, l.etat)}</td>
-                          <td className="small">{l.destinataire}</td>
-                          <td className="small">{l.villeArrivee}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ResponsiveTable
+                  lignes={q.data.lignes}
+                  cleLigne={(_, i) => i}
+                  colonnes={[
+                    { cle: 'colis', titre: 'Colis', className: 'mono', cellule: (l) => l.reference },
+                    { cle: 'categorie', titre: 'Cat.', mobile: 'badge', cellule: (l) => <Badge ton="bleu">{CATEGORIES_COURT[l.categorie] ?? l.categorie}</Badge> },
+                    { cle: 'produit', titre: 'Produit', cellule: (l) => l.produit },
+                    { cle: 'quantite', titre: 'Qté', cellule: (l) => l.quantite },
+                    { cle: 'etat', titre: 'État', cellule: (l) => libelle(ETATS_MARCHANDISE, l.etat) },
+                    { cle: 'destinataire', titre: 'Destinataire', className: 'small', cellule: (l) => l.destinataire },
+                    { cle: 'destination', titre: 'Destination', className: 'small', cellule: (l) => l.villeArrivee },
+                  ]}
+                />
               )}
             </Card>
             <Card title="Synthèse par produit" flush>
-              <table>
-                <thead><tr><th>Produit</th><th>État</th><th>Qté</th><th>Colis</th></tr></thead>
-                <tbody>
-                  {q.data.synthese.map((s, i) => (
-                    <tr key={i}><td>{s.produit}</td><td className="small">{libelle(ETATS_MARCHANDISE, s.etat)}</td><td>{s.quantite}</td><td>{s.colis}</td></tr>
-                  ))}
-                </tbody>
-              </table>
+              <ResponsiveTable
+                lignes={q.data.synthese}
+                cleLigne={(_, i) => i}
+                colonnes={[
+                  { cle: 'produit', titre: 'Produit', cellule: (s) => s.produit },
+                  { cle: 'etat', titre: 'État', className: 'small', cellule: (s) => libelle(ETATS_MARCHANDISE, s.etat) },
+                  { cle: 'quantite', titre: 'Qté', cellule: (s) => s.quantite },
+                  { cle: 'colis', titre: 'Colis', cellule: (s) => s.colis },
+                ]}
+              />
             </Card>
           </div>
         </>

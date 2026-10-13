@@ -6,6 +6,7 @@ import type { Personne } from '@/api/types';
 import { Badge, Card, Chips, Empty, ErrorBox, KV, Loader, Stat } from '@/components/ui';
 import { CATEGORIES, CATEGORIES_COURT, PAYS, libelle } from '@/lib/labels';
 import { montant, nomComplet } from '@/lib/format';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Kpis {
   ventes: { devise: string; commandes: number; chiffreAffaires: number; panierMoyen: number; clients: number; revenuParClient: number }[];
@@ -237,16 +238,16 @@ export default function AnalysesPage() {
                 <KV label="Points saturés">{stock.data.pointsCollecte.satures}</KV>
               </div>
               <div className="section-label">Emballages</div>
-              <table>
-                <tbody>
-                  {stock.data.emballages.articles.map((a) => (
-                    <tr key={a.id}>
-                      <td className="small">{a.libelle}</td>
-                      <td className="right"><Badge ton={a.etat === 'rupture' ? 'rouge' : a.etat === 'faible' ? 'orange' : 'vert'}>{a.stock}</Badge></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ResponsiveTable
+                variante="liste"
+                sansEntete
+                lignes={stock.data.emballages.articles}
+                cleLigne={(a) => a.id}
+                colonnes={[
+                  { cle: 'article', className: 'small', cellule: (a) => a.libelle },
+                  { cle: 'stock', className: 'right', cellule: (a) => <Badge ton={a.etat === 'rupture' ? 'rouge' : a.etat === 'faible' ? 'orange' : 'vert'}>{a.stock}</Badge> },
+                ]}
+              />
               <div className="section-label">Occupation des points</div>
               <Barres lignes={stock.data.pointsCollecte.points.map((p) => ({ label: p.code, valeur: p.colisEnStock }))} />
             </>
@@ -276,21 +277,16 @@ export default function AnalysesPage() {
 
       <Card title="Clients les plus actifs" flush>
         {!actifs.data?.length ? <Empty>Aucune donnée</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Client</th><th>Email</th><th>Compte</th><th className="right">Colis</th></tr></thead>
-              <tbody>
-                {actifs.data.map((a) => (
-                  <tr key={a.client.id}>
-                    <td><Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link></td>
-                    <td className="small">{a.client.email}</td>
-                    <td>{a.client.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>}</td>
-                    <td className="right">{a.nbColis}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={actifs.data}
+            cleLigne={(a) => a.client.id}
+            colonnes={[
+              { cle: 'client', titre: 'Client', cellule: (a) => <Link to={`/clients/${a.client.id}`}>{nomComplet(a.client)}</Link> },
+              { cle: 'email', titre: 'Email', mobile: 'soustitre', className: 'small', cellule: (a) => a.client.email },
+              { cle: 'compte', titre: 'Compte', mobile: 'badge', cellule: (a) => (a.client.typeCompte === 'entreprise' ? <Badge ton="violet">Pro</Badge> : <Badge>Particulier</Badge>) },
+              { cle: 'colis', titre: 'Colis', className: 'right', cellule: (a) => a.nbColis },
+            ]}
+          />
         )}
       </Card>
       <p className="small muted">Pays : {Object.values(PAYS).join(' et ')}. Les indicateurs sont recalculés au plus toutes les minutes par le serveur.</p>

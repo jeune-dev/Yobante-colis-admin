@@ -7,6 +7,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, StatutBadge, toast } from '@/comp
 import { STATUTS_SUPPRESSION } from '@/lib/labels';
 import { dateHeure } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Demande {
   id: string;
@@ -44,23 +45,18 @@ export default function SuppressionsComptePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune demande</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Email</th><th>Motif</th><th>Reçue le</th><th>Statut</th><th>Note</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((d) => (
-                  <tr key={d.id}>
-                    <td><strong>{d.email}</strong></td>
-                    <td className="small" style={{ maxWidth: 360 }}>{d.motif || '—'}</td>
-                    <td className="small muted">{dateHeure(d.createdAt)}</td>
-                    <td><StatutBadge table={STATUTS_SUPPRESSION} valeur={d.statut} />{d.traiteLe && <div className="muted small">{dateHeure(d.traiteLe)}</div>}</td>
-                    <td className="small">{d.noteAdmin || '—'}</td>
-                    <td>{d.statut === 'en_attente' && <button className="btn secondary sm" onClick={() => setTraitement(d)}>Traiter</button>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(d) => d.id}
+            colonnes={[
+              { cle: 'email', titre: 'Email', cellule: (d) => <strong>{d.email}</strong> },
+              { cle: 'motif', titre: 'Motif', className: 'small texte-limite', cellule: (d) => d.motif || '—' },
+              { cle: 'recue', titre: 'Reçue le', className: 'small muted', cellule: (d) => dateHeure(d.createdAt) },
+              { cle: 'statut', titre: 'Statut', cellule: (d) => <><StatutBadge table={STATUTS_SUPPRESSION} valeur={d.statut} />{d.traiteLe && <div className="muted small">{dateHeure(d.traiteLe)}</div>}</> },
+              { cle: 'note', titre: 'Note', className: 'small', cellule: (d) => d.noteAdmin || '—' },
+              { cle: 'actions', cellule: (d) => d.statut === 'en_attente' && <button className="btn secondary sm" onClick={() => setTraitement(d)}>Traiter</button> },
+            ]}
+          />
         )}
       </Card>
 

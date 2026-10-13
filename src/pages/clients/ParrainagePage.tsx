@@ -8,6 +8,7 @@ import { FormModal } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader, Modal, Pagination, SearchInput, Stat } from '@/components/ui';
 import { date, montant, nomComplet } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Parrain {
   id: string;
@@ -51,28 +52,23 @@ export default function ParrainagePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.parrains.length ? <Empty>Aucun parrain</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Parrain</th><th>Contact</th><th>Code</th><th>Filleuls</th><th className="right">Crédit</th><th /></tr></thead>
-              <tbody>
-                {q.data.parrains.map((p) => (
-                  <tr key={p.id}>
-                    <td><Link to={`/clients/${p.id}`}>{nomComplet(p)}</Link></td>
-                    <td className="small">{p.email}<div className="muted">{p.telephone}</div></td>
-                    <td className="mono">{p.codeParrainage}</td>
-                    <td>{Number(p.nbFilleuls)}</td>
-                    <td className="right">{montant(p.creditParrainage, 'EUR')}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn secondary sm" onClick={() => setFilleuls(p)}>Filleuls</button>
-                        <button className="btn secondary sm" onClick={() => setCredit(p)}><Icon name="coins" size={13} /> Crédit</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.parrains}
+            cleLigne={(p) => p.id}
+            colonnes={[
+              { cle: 'parrain', titre: 'Parrain', cellule: (p) => <Link to={`/clients/${p.id}`}>{nomComplet(p)}</Link> },
+              { cle: 'contact', titre: 'Contact', className: 'small', cellule: (p) => <>{p.email}<div className="muted">{p.telephone}</div></> },
+              { cle: 'code', titre: 'Code', className: 'mono', cellule: (p) => p.codeParrainage },
+              { cle: 'filleuls', titre: 'Filleuls', cellule: (p) => Number(p.nbFilleuls) },
+              { cle: 'credit', titre: 'Crédit', className: 'right', cellule: (p) => montant(p.creditParrainage, 'EUR') },
+              { cle: 'actions', cellule: (p) => (
+                <div className="actions">
+                  <button className="btn secondary sm" onClick={() => setFilleuls(p)}>Filleuls</button>
+                  <button className="btn secondary sm" onClick={() => setCredit(p)}><Icon name="coins" size={13} /> Crédit</button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
@@ -108,19 +104,16 @@ function DialogueFilleuls({ parrain, onClose }: { parrain: Parrain; onClose: () 
     <Modal title={`Filleuls de ${nomComplet(parrain)}`} onClose={onClose} large>
       <ErrorBox error={q.error} />
       {q.isLoading ? <Loader /> : !q.data?.filleuls.length ? <Empty>Aucun filleul</Empty> : (
-        <table>
-          <thead><tr><th>Filleul</th><th>Email</th><th>Inscrit le</th><th>Récompense</th></tr></thead>
-          <tbody>
-            {q.data.filleuls.map((f) => (
-              <tr key={f.id}>
-                <td><Link to={`/clients/${f.id}`}>{nomComplet(f)}</Link></td>
-                <td className="small">{f.email}</td>
-                <td className="small muted">{date(f.createdAt)}</td>
-                <td>{f.parrainageRecompense ? <Badge ton="vert">Versée</Badge> : <Badge>En attente</Badge>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResponsiveTable
+          lignes={q.data.filleuls}
+          cleLigne={(f) => f.id}
+          colonnes={[
+            { cle: 'filleul', titre: 'Filleul', cellule: (f) => <Link to={`/clients/${f.id}`}>{nomComplet(f)}</Link> },
+            { cle: 'email', titre: 'Email', mobile: 'soustitre', className: 'small', cellule: (f) => f.email },
+            { cle: 'inscrit', titre: 'Inscrit le', className: 'small muted', cellule: (f) => date(f.createdAt) },
+            { cle: 'recompense', titre: 'Récompense', mobile: 'badge', cellule: (f) => (f.parrainageRecompense ? <Badge ton="vert">Versée</Badge> : <Badge>En attente</Badge>) },
+          ]}
+        />
       )}
     </Modal>
   );

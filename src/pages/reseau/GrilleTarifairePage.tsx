@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
 import { CATEGORIES, DEVISES, MODES_TRANSPORT, OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Article {
   id: string;
@@ -99,38 +100,31 @@ export default function GrilleTarifairePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun article</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th /><th>Code</th><th>Article</th><th>Catégorie</th><th>Mode</th><th>Sens</th><th className="right">Dakar</th><th className="right">Autres régions</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((a) => (
-                  <tr key={a.id}>
-                    <td style={{ width: 48 }}>
-                      {a.photoUrl ? <img src={a.photoUrl} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} /> : null}
-                    </td>
-                    <td className="mono">{a.code}</td>
-                    <td><strong>{a.libelle}</strong>{a.description && <div className="muted small">{a.description}</div>}</td>
-                    <td className="small">{libelle(CATEGORIES, a.categorie)}</td>
-                    <td>{libelle(MODES_TRANSPORT, a.modeTransport)}</td>
-                    <td className="small">{libelle(PAYS, a.paysDepart)} → {libelle(PAYS, a.paysArrivee)}</td>
-                    <td className="right">{a.prixAPartirDe && 'dès '}{montant(a.prixDakar, a.devise)}</td>
-                    <td className="right">{a.prixAPartirDe && 'dès '}{montant(a.prixAutresRegions, a.devise)}</td>
-                    <td>{a.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Photo" onClick={() => setPhoto(a)}><Icon name="image" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Retirer ${a.libelle} de la grille ?`) && supprimer.mutate(a)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(a) => a.id}
+            colonnes={[
+              { cle: 'photo', mobile: 'masque', className: 'col-vignette', cellule: (a) => (a.photoUrl ? <img className="vignette-carree" src={a.photoUrl} alt="" /> : null) },
+              { cle: 'code', titre: 'Code', className: 'mono', priorite: 'basse', cellule: (a) => a.code },
+              { cle: 'article', titre: 'Article', mobile: 'titre', cellule: (a) => <><strong>{a.libelle}</strong>{a.description && <div className="muted small">{a.description}</div>}</> },
+              { cle: 'categorie', titre: 'Catégorie', className: 'small', cellule: (a) => libelle(CATEGORIES, a.categorie) },
+              { cle: 'mode', titre: 'Mode', cellule: (a) => libelle(MODES_TRANSPORT, a.modeTransport) },
+              { cle: 'sens', titre: 'Sens', className: 'small', priorite: 'basse', cellule: (a) => <>{libelle(PAYS, a.paysDepart)} → {libelle(PAYS, a.paysArrivee)}</> },
+              { cle: 'dakar', titre: 'Dakar', className: 'right', cellule: (a) => <>{a.prixAPartirDe && 'dès '}{montant(a.prixDakar, a.devise)}</> },
+              { cle: 'regions', titre: 'Autres régions', className: 'right', cellule: (a) => <>{a.prixAPartirDe && 'dès '}{montant(a.prixAutresRegions, a.devise)}</> },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (a) => (a.isActive ? <Badge ton="vert">Actif</Badge> : <Badge>Inactif</Badge>) },
+              { cle: 'actions', cellule: (a) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Photo" aria-label="Photo" onClick={() => setPhoto(a)}><Icon name="image" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Retirer ${a.libelle} de la grille ?`) && supprimer.mutate(a)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

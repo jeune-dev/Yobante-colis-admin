@@ -2164,3 +2164,321 @@ td.right,
 html.tiroir-ouvert {
   overflow: hidden;
 }
+
+/* ════ ResponsiveTable : tableau ≥ 768 px, cartes en dessous ════ */
+
+/* Tableau : première colonne collante quand il défile dans son conteneur,
+   ombre sur le bord droit tant qu'il reste des colonnes à voir */
+.table-wrap[data-scroll-x] {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to left, var(--white) 30%, transparent) right / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.12), transparent) right / 10px 100% no-repeat scroll;
+}
+
+.rt tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--white);
+}
+
+.rt thead tr > :first-child {
+  background: #fafaf8;
+}
+
+.rt tr.cliquable:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Tablette : les colonnes secondaires laissent la place aux essentielles */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .rt .rt-basse {
+    display: none;
+  }
+}
+
+/* Cartes */
+.rt-cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.card > .rt-cartes,
+.card > .rt-liste {
+  border-radius: inherit;
+}
+
+.rt-cartes-barre {
+  display: flex;
+  gap: 1rem;
+  padding: 0 4px;
+}
+
+.rt-tout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  color: var(--text2);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.rt-carte {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: var(--sh);
+}
+
+.rt-carte.cliquable {
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.rt-carte.cliquable:active {
+  transform: scale(0.99);
+  background: #fafaf8;
+}
+
+.rt-carte-tete {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.rt-carte-titres {
+  flex: 1;
+  min-width: 0;
+}
+
+.rt-carte-titre {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rt-carte-soustitre {
+  margin-top: 2px;
+  color: var(--text3);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.rt-carte-badge,
+.rt-carte-selection {
+  flex-shrink: 0;
+}
+
+.rt-carte-selection input {
+  width: 22px;
+  height: 22px;
+}
+
+.rt-carte-champs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--gray2);
+}
+
+.rt-carte-champs dt {
+  color: var(--text3);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.rt-carte-champs dd {
+  margin-top: 2px;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+/* Les classes d'alignement du tableau n'ont pas de sens dans la carte */
+.rt-carte-champs dd.right {
+  text-align: left;
+}
+
+.rt-carte-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--gray2);
+}
+
+.rt-carte-actions .actions {
+  justify-content: flex-end;
+}
+
+/* Très petit écran : une colonne de champs */
+@media (max-width: 359.98px) {
+  .rt-carte-champs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Liste compacte (petits tableaux libellé / valeur) */
+.rt-liste {
+  list-style: none;
+  padding: 0.25rem 0.85rem;
+}
+
+.rt-liste > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.8rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--gray2);
+  font-size: 0.88rem;
+}
+
+.rt-liste > li:last-child {
+  border-bottom: 0;
+}
+
+.rt-liste > li.cliquable {
+  cursor: pointer;
+}
+
+.rt-liste-cellule {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Le libellé prend la place disponible, la valeur reste collée à droite */
+.rt-liste-cellule:first-child {
+  flex: 1 1 10rem;
+}
+
+.rt-liste-cellule:last-child:not(:first-child) {
+  margin-left: auto;
+  text-align: right;
+}
+
+.card-body > .rt-liste {
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rt-carte.cliquable {
+    transition: none;
+  }
+}
+
+/* Vignettes des listes (remplacent les dimensions inline) */
+.col-vignette {
+  width: 60px;
+}
+
+.vignette,
+.vignette-carree {
+  display: block;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.vignette {
+  width: 52px;
+  height: 36px;
+}
+
+.vignette-carree {
+  width: 40px;
+  height: 40px;
+}
+
+.texte-limite {
+  max-width: 26rem;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Notifications : non lues en gras (le message reste en graisse normale) */
+.col-pastille {
+  width: 14px;
+}
+
+.non-lue {
+  font-weight: 600;
+}
+
+.rt-carte.non-lue {
+  border-left: 3px solid var(--primary);
+}
+
+.message-notif {
+  font-weight: 400;
+}
+
+.texte-limite-l {
+  max-width: 35rem;
+}
+
+.reponse-avis {
+  margin-top: 4px;
+  color: var(--primary);
+}
+
+/* Bouton à l'apparence d'un lien (remplace <a onClick> sans href, non focusable) */
+.lien {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Horaires des points de collecte */
+.jour {
+  text-transform: capitalize;
+}
+
+.col-jour {
+  width: 7rem;
+}
+
+.td-serre {
+  padding: 0.35rem 0;
+}
+
+.actions.centre {
+  align-items: center;
+}
+
+.creneau {
+  gap: 4px;
+}
+
+/* Sans en-tête, les champs ouvrent directement la carte */
+.rt-carte > .rt-carte-champs:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.texte-limite,
+.texte-limite-l {
+  overflow-wrap: anywhere;
+}

@@ -6,6 +6,7 @@ import type { Colis, Liste } from '@/api/types';
 import { estAdmin, useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { Badge, Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
 import { CATEGORIES, CATEGORIES_COURT, MODES_DEPOT, STATUTS_COLIS, TYPES_CONTENU } from '@/lib/labels';
 import { date, montant, poids, telecharger } from '@/lib/format';
@@ -174,40 +175,30 @@ export default function ColisListPage() {
         ) : !lignes.length ? (
           <Empty>Aucun colis ne correspond aux filtres</Empty>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  {admin && <th><input type="checkbox" checked={toutCoche} onChange={basculerTout} /></th>}
-                  <th>Référence</th><th>Cat.</th><th>Expéditeur</th><th>Destinataire</th><th>Trajet</th>
-                  <th>Poids</th><th className="right">Montant</th><th>Statut</th><th>Créé le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lignes.map((c) => (
-                  <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
-                    {admin && (
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" checked={selection.includes(c.id)} onChange={() => basculer(c.id)} />
-                      </td>
-                    )}
-                    <td className="mono">{c.reference}</td>
-                    <td><Badge ton="bleu">{CATEGORIES_COURT[c.categorie] ?? c.categorie}</Badge></td>
-                    <td>{c.expediteurNom}</td>
-                    <td>{c.destinataireNom}</td>
-                    <td className="small">{c.villeDepart?.nom ?? c.paysDepart} → {c.villeArrivee?.nom ?? c.paysArrivee}</td>
-                    <td className="small">{poids(c.poidsFactureKg)}</td>
-                    <td className="right">{montant(c.montantTotal, c.devise)}</td>
-                    <td>
-                      <StatutBadge table={STATUTS_COLIS} valeur={c.statut} />
-                      {c.enRetard && <> <Badge ton="rouge">Retard</Badge></>}
-                    </td>
-                    <td className="small muted">{date(c.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={lignes}
+            cleLigne={(c) => c.id}
+            onLigne={(c) => navigate(`/colis/${c.id}`)}
+            colonnes={[
+              ...(admin ? [{
+                cle: 'selection', mobile: 'selection' as const, libelle: 'Tout sélectionner',
+                titre: <input type="checkbox" checked={toutCoche} onChange={basculerTout} aria-label="Tout sélectionner" />,
+                cellule: (c: Colis) => <input type="checkbox" checked={selection.includes(c.id)} onChange={() => basculer(c.id)} aria-label={`Sélectionner ${c.reference}`} />,
+              }] : []),
+              { cle: 'reference', titre: 'Référence', mobile: 'titre', className: 'mono', cellule: (c) => c.reference },
+              { cle: 'categorie', titre: 'Cat.', priorite: 'basse', cellule: (c) => <Badge ton="bleu">{CATEGORIES_COURT[c.categorie] ?? c.categorie}</Badge> },
+              { cle: 'expediteur', titre: 'Expéditeur', cellule: (c) => c.expediteurNom },
+              { cle: 'destinataire', titre: 'Destinataire', cellule: (c) => c.destinataireNom },
+              { cle: 'trajet', titre: 'Trajet', className: 'small', cellule: (c) => <>{c.villeDepart?.nom ?? c.paysDepart} → {c.villeArrivee?.nom ?? c.paysArrivee}</> },
+              { cle: 'poids', titre: 'Poids', className: 'small', priorite: 'basse', cellule: (c) => poids(c.poidsFactureKg) },
+              { cle: 'montant', titre: 'Montant', className: 'right', cellule: (c) => montant(c.montantTotal, c.devise) },
+              { cle: 'statut', titre: 'Statut', cellule: (c) => <>
+                <StatutBadge table={STATUTS_COLIS} valeur={c.statut} />
+                {c.enRetard && <> <Badge ton="rouge">Retard</Badge></>}
+              </> },
+              { cle: 'cree', titre: 'Créé le', className: 'small muted', priorite: 'basse', cellule: (c) => date(c.createdAt) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

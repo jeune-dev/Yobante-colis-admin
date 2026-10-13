@@ -13,6 +13,7 @@ interface StatsFactures {
 import { STATUTS_FACTURE } from '@/lib/labels';
 import { date, montant, nomComplet, telecharger } from '@/lib/format';
 import { useAction, useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export default function FacturesPage() {
   const navigate = useNavigate();
@@ -88,27 +89,21 @@ export default function FacturesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.factures.length ? <Empty>Aucune facture</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Facture</th><th>Client</th><th>Colis</th><th className="right">Total</th><th className="right">Payé</th><th>Statut</th><th>Émise le</th><th>Échéance</th></tr>
-              </thead>
-              <tbody>
-                {q.data.factures.map((f) => (
-                  <tr key={f.id} className="cliquable" onClick={() => navigate(`/factures/${f.id}`)}>
-                    <td className="mono">{f.reference}</td>
-                    <td>{f.User?.raisonSociale || nomComplet(f.User)}</td>
-                    <td className="mono">{f.colis?.reference ?? '—'}</td>
-                    <td className="right">{f.reference.startsWith('AVO') ? '− ' : ''}{montant(f.montantTotal, f.devise)}</td>
-                    <td className="right">{f.reference.startsWith('AVO') ? <span className="muted">—</span> : montant(f.montantPaye, f.devise)}</td>
-                    <td><StatutBadge table={STATUTS_FACTURE} valeur={f.statut} /></td>
-                    <td className="small muted">{date(f.dateEmission ?? f.createdAt)}</td>
-                    <td className="small muted">{date(f.dateLimitePaiement)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.factures}
+            cleLigne={(f) => f.id}
+            onLigne={(f) => navigate(`/factures/${f.id}`)}
+            colonnes={[
+              { cle: 'facture', titre: 'Facture', className: 'mono', cellule: (f) => f.reference },
+              { cle: 'client', titre: 'Client', mobile: 'soustitre', cellule: (f) => f.User?.raisonSociale || nomComplet(f.User) },
+              { cle: 'colis', titre: 'Colis', className: 'mono', priorite: 'basse', cellule: (f) => f.colis?.reference ?? '—' },
+              { cle: 'total', titre: 'Total', className: 'right', cellule: (f) => <>{f.reference.startsWith('AVO') ? '− ' : ''}{montant(f.montantTotal, f.devise)}</> },
+              { cle: 'paye', titre: 'Payé', className: 'right', cellule: (f) => (f.reference.startsWith('AVO') ? <span className="muted">—</span> : montant(f.montantPaye, f.devise)) },
+              { cle: 'statut', titre: 'Statut', cellule: (f) => <StatutBadge table={STATUTS_FACTURE} valeur={f.statut} /> },
+              { cle: 'emise', titre: 'Émise le', className: 'small muted', priorite: 'basse', cellule: (f) => date(f.dateEmission ?? f.createdAt) },
+              { cle: 'echeance', titre: 'Échéance', className: 'small muted', cellule: (f) => date(f.dateLimitePaiement) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

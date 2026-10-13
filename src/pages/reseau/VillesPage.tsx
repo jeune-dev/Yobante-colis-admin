@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useZonesOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Ville {
   id: string;
@@ -83,41 +84,36 @@ export default function VillesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.villes.length ? <Empty>Aucune ville</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Ville</th><th>Pays</th><th>Région</th><th>Zone</th><th>Codes postaux</th><th>Services</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.villes.map((v) => (
-                  <tr key={v.id}>
-                    <td><strong>{v.nom}</strong></td>
-                    <td>{libelle(PAYS, v.pays)}</td>
-                    <td className="small">{v.region || '—'}</td>
-                    <td className="small">{v.zone ? `${v.zone.code}` : '—'}</td>
-                    <td className="small">{v.codesPostaux?.join(', ') || '—'}</td>
-                    <td>
-                      <div className="actions">
-                        {v.zoneTarifDakar && <Badge ton="bleu">Tarif Dakar</Badge>}
-                        {v.isZoneEloignee && <Badge ton="orange">Éloignée</Badge>}
-                        {v.livraisonDomicileDisponible && <Badge>Livraison</Badge>}
-                        {v.enlevementDomicileDisponible && <Badge>Enlèvement</Badge>}
-                      </div>
-                    </td>
-                    <td>{v.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(v)}>{v.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer"
-                          onClick={() => confirm(`Supprimer la ville ${v.nom} ?`) && supprimer.mutate(v)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.villes}
+            cleLigne={(v) => v.id}
+            colonnes={[
+              { cle: 'ville', titre: 'Ville', cellule: (v) => <strong>{v.nom}</strong> },
+              { cle: 'pays', titre: 'Pays', cellule: (v) => libelle(PAYS, v.pays) },
+              { cle: 'region', titre: 'Région', className: 'small', cellule: (v) => v.region || '—' },
+              { cle: 'zone', titre: 'Zone', className: 'small', cellule: (v) => (v.zone ? `${v.zone.code}` : '—') },
+              { cle: 'codes', titre: 'Codes postaux', className: 'small', priorite: 'basse', cellule: (v) => v.codesPostaux?.join(', ') || '—' },
+              { cle: 'services', titre: 'Services', priorite: 'basse', cellule: (v) => (
+                <div className="actions">
+                  {v.zoneTarifDakar && <Badge ton="bleu">Tarif Dakar</Badge>}
+                  {v.isZoneEloignee && <Badge ton="orange">Éloignée</Badge>}
+                  {v.livraisonDomicileDisponible && <Badge>Livraison</Badge>}
+                  {v.enlevementDomicileDisponible && <Badge>Enlèvement</Badge>}
+                </div>
+              ) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (v) => (v.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>) },
+              { cle: 'actions', cellule: (v) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(v)}>{v.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
+                    onClick={() => confirm(`Supprimer la ville ${v.nom} ?`) && supprimer.mutate(v)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

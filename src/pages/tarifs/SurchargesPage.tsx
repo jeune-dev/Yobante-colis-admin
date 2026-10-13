@@ -9,6 +9,7 @@ import { ASSIETTES_SURCHARGE, DEVISES, MODES_SURCHARGE, OPTIONS_PAYS, PAYS, TYPE
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useServicesOptions } from '@/lib/options';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Surcharge {
   id: string;
@@ -97,39 +98,34 @@ export default function SurchargesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucune surcharge</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Code</th><th>Libellé</th><th>Type</th><th>Valeur</th><th>Assiette</th><th>Portée</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((s) => (
-                  <tr key={s.id}>
-                    <td className="mono">{s.code}</td>
-                    <td><strong>{s.libelle}</strong></td>
-                    <td className="small">{libelle(TYPES_SURCHARGE, s.type)}</td>
-                    <td>{valeurAffichee(s)}</td>
-                    <td className="small">{libelle(ASSIETTES_SURCHARGE, s.assiette)}</td>
-                    <td>
-                      <div className="actions">
-                        {s.automatique ? <Badge ton="bleu">Auto</Badge> : <Badge>Option</Badge>}
-                        {s.paysApplication && <Badge>{libelle(PAYS, s.paysApplication)}</Badge>}
-                        {s.internationalUniquement && <Badge>International</Badge>}
-                      </div>
-                    </td>
-                    <td>{s.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Supprimer ${s.libelle} ?`) && supprimer.mutate(s)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(s) => s.id}
+            colonnes={[
+              { cle: 'code', titre: 'Code', className: 'mono', mobile: 'soustitre', cellule: (s) => s.code },
+              { cle: 'libelle', titre: 'Libellé', mobile: 'titre', cellule: (s) => <strong>{s.libelle}</strong> },
+              { cle: 'type', titre: 'Type', className: 'small', cellule: (s) => libelle(TYPES_SURCHARGE, s.type) },
+              { cle: 'valeur', titre: 'Valeur', cellule: (s) => valeurAffichee(s) },
+              { cle: 'assiette', titre: 'Assiette', className: 'small', priorite: 'basse', cellule: (s) => libelle(ASSIETTES_SURCHARGE, s.assiette) },
+              { cle: 'portee', titre: 'Portée', priorite: 'basse', cellule: (s) => (
+                <div className="actions">
+                  {s.automatique ? <Badge ton="bleu">Auto</Badge> : <Badge>Option</Badge>}
+                  {s.paysApplication && <Badge>{libelle(PAYS, s.paysApplication)}</Badge>}
+                  {s.internationalUniquement && <Badge>International</Badge>}
+                </div>
+              ) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (s) => (s.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>) },
+              { cle: 'actions', cellule: (s) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${s.libelle} ?`) && supprimer.mutate(s)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 
@@ -176,19 +172,21 @@ function DialogueSimulation({ onClose }: { onClose: () => void }) {
         <Field label="Valeur déclarée"><input className="input" type="number" value={f.valeurDeclaree} onChange={(e) => setF({ ...f, valeurDeclaree: e.target.value })} /></Field>
       </div>
       {resultat && (
-        <table>
-          <tbody>
-            <tr><td>Fret</td><td className="right">{resultat.fret.toLocaleString('fr-FR')}</td></tr>
-            {resultat.lignes.map((l) => (
-              <tr key={l.code}>
-                <td>{l.libelle} {!l.automatique && <Badge>option</Badge>}</td>
-                <td className="right">{l.montant.toLocaleString('fr-FR')}</td>
-              </tr>
-            ))}
-            <tr><td className="muted">Total surcharges</td><td className="right">{resultat.totalSurcharges.toLocaleString('fr-FR')}</td></tr>
-            <tr><td><strong>Total</strong></td><td className="right"><strong>{resultat.total.toLocaleString('fr-FR')}</strong></td></tr>
-          </tbody>
-        </table>
+        <ResponsiveTable
+          variante="liste"
+          sansEntete
+          lignes={[
+            { cle: 'fret', libelle: <>Fret</>, montant: resultat.fret.toLocaleString('fr-FR') },
+            ...resultat.lignes.map((l) => ({ cle: l.code, libelle: <>{l.libelle} {!l.automatique && <Badge>option</Badge>}</>, montant: l.montant.toLocaleString('fr-FR') })),
+            { cle: 'total-surcharges', libelle: <span className="muted">Total surcharges</span>, montant: resultat.totalSurcharges.toLocaleString('fr-FR') },
+            { cle: 'total', libelle: <strong>Total</strong>, montant: <strong>{resultat.total.toLocaleString('fr-FR')}</strong> },
+          ]}
+          cleLigne={(l) => l.cle}
+          colonnes={[
+            { cle: 'libelle', cellule: (l) => l.libelle },
+            { cle: 'montant', className: 'right', cellule: (l) => l.montant },
+          ]}
+        />
       )}
     </Modal>
   );

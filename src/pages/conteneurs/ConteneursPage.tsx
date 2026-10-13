@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, StatutB
 import { MODES_TRANSPORT, PAYS, STATUTS_ROTATION, libelle } from '@/lib/labels';
 import { date, poids } from '@/lib/format';
 import { useAction, useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export default function ConteneursPage() {
   const navigate = useNavigate();
@@ -46,32 +47,26 @@ export default function ConteneursPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.rotations.length ? <Empty>Aucun conteneur</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Référence</th><th>Mode</th><th>Trajet</th><th>Départ prévu</th><th>Arrivée prévue</th><th>Chargement</th><th>Statut</th></tr>
-              </thead>
-              <tbody>
-                {q.data.rotations.map((r) => (
-                  <tr key={r.id} className="cliquable" onClick={() => navigate(`/conteneurs/${r.id}`)}>
-                    <td className="mono">{r.reference}</td>
-                    <td>{libelle(MODES_TRANSPORT, r.modeTransport)}</td>
-                    <td className="small">{libelle(PAYS, r.paysDepart)} → {libelle(PAYS, r.paysArrivee)}</td>
-                    <td className="small">
-                      {date(r.dateDepartPrevue)}
-                      {r.statut === 'planifie' && r.dateDepartPrevue && new Date(r.dateDepartPrevue) < new Date() && <div><Badge ton="rouge">Départ dépassé</Badge></div>}
-                    </td>
-                    <td className="small">{date(r.dateArriveePrevue)}</td>
-                    <td className="small">
-                      {r.nbColisCharges ?? 0} colis · {poids(r.poidsCharge ?? 0)}
-                      {r.capacitePoidsKg && <span className="muted"> / {poids(r.capacitePoidsKg)}</span>}
-                    </td>
-                    <td><StatutBadge table={STATUTS_ROTATION} valeur={r.statut} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.rotations}
+            cleLigne={(r) => r.id}
+            onLigne={(r) => navigate(`/conteneurs/${r.id}`)}
+            colonnes={[
+              { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (r) => r.reference },
+              { cle: 'mode', titre: 'Mode', cellule: (r) => libelle(MODES_TRANSPORT, r.modeTransport) },
+              { cle: 'trajet', titre: 'Trajet', className: 'small', cellule: (r) => <>{libelle(PAYS, r.paysDepart)} → {libelle(PAYS, r.paysArrivee)}</> },
+              { cle: 'depart', titre: 'Départ prévu', className: 'small', cellule: (r) => <>
+                {date(r.dateDepartPrevue)}
+                {r.statut === 'planifie' && r.dateDepartPrevue && new Date(r.dateDepartPrevue) < new Date() && <div><Badge ton="rouge">Départ dépassé</Badge></div>}
+              </> },
+              { cle: 'arrivee', titre: 'Arrivée prévue', className: 'small', priorite: 'basse', cellule: (r) => date(r.dateArriveePrevue) },
+              { cle: 'chargement', titre: 'Chargement', className: 'small', cellule: (r) => <>
+                {r.nbColisCharges ?? 0} colis · {poids(r.poidsCharge ?? 0)}
+                {r.capacitePoidsKg && <span className="muted"> / {poids(r.capacitePoidsKg)}</span>}
+              </> },
+              { cle: 'statut', titre: 'Statut', cellule: (r) => <StatutBadge table={STATUTS_ROTATION} valeur={r.statut} /> },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

@@ -7,6 +7,7 @@ import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Loader, Modal, Pagination, SearchInput, toast } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Zone {
   id: string;
@@ -66,34 +67,29 @@ export default function ZonesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.zones.length ? <Empty>Aucune zone</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Code</th><th>Nom</th><th>Pays</th><th>Majoration</th><th>Délai +</th><th>Villes</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.zones.map((z) => (
-                  <tr key={z.id}>
-                    <td className="mono">{z.code}</td>
-                    <td><strong>{z.nom}</strong>{z.description && <div className="muted small">{z.description}</div>}</td>
-                    <td>{libelle(PAYS, z.pays)}</td>
-                    <td>{Number(z.majorationPourcent)} %</td>
-                    <td>{z.delaiSupplementaireJours} j</td>
-                    <td className="small">{z.villes?.map((v) => v.nom).join(', ') || '—'}</td>
-                    <td>{z.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn secondary sm" onClick={() => setVilles(z)}>Villes</button>
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(z)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Supprimer"
-                          onClick={() => confirm(`Supprimer la zone ${z.nom} ?`) && supprimer.mutate(z)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.zones}
+            cleLigne={(z) => z.id}
+            colonnes={[
+              { cle: 'code', titre: 'Code', className: 'mono', mobile: 'soustitre', cellule: (z) => z.code },
+              { cle: 'nom', titre: 'Nom', mobile: 'titre', cellule: (z) => <><strong>{z.nom}</strong>{z.description && <div className="muted small">{z.description}</div>}</> },
+              { cle: 'pays', titre: 'Pays', cellule: (z) => libelle(PAYS, z.pays) },
+              { cle: 'majoration', titre: 'Majoration', cellule: (z) => `${Number(z.majorationPourcent)} %` },
+              { cle: 'delai', titre: 'Délai +', cellule: (z) => `${z.delaiSupplementaireJours} j` },
+              { cle: 'villes', titre: 'Villes', className: 'small', priorite: 'basse', cellule: (z) => z.villes?.map((v) => v.nom).join(', ') || '—' },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (z) => (z.isActive ? <Badge ton="vert">Active</Badge> : <Badge>Inactive</Badge>) },
+              { cle: 'actions', cellule: (z) => (
+                <div className="actions">
+                  <button className="btn secondary sm" onClick={() => setVilles(z)}>Villes</button>
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(z)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
+                    onClick={() => confirm(`Supprimer la zone ${z.nom} ?`) && supprimer.mutate(z)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

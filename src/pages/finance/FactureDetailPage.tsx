@@ -8,6 +8,7 @@ import { Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/
 import { METHODES_PAIEMENT, STATUTS_FACTURE, STATUTS_PAIEMENT, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, ouvrirDocument } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type Dialogue = null | 'paiement' | 'remise' | 'annuler' | 'echeance' | 'avoir';
 
@@ -64,40 +65,36 @@ export default function FactureDetailPage() {
       <div className="grid grid-main-side">
         <div>
           <Card title="Lignes" flush>
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Désignation</th><th className="right">Montant</th></tr></thead>
-                <tbody>
-                  {f.lignes?.map((l, i) => (
-                    <tr key={i}><td>{l.libelle ?? l.designation}</td><td className="right">{montant(l.montant, f.devise)}</td></tr>
-                  ))}
-                  {Number(f.remise) > 0 && <tr><td>Remise</td><td className="right">− {montant(f.remise, f.devise)}</td></tr>}
-                  <tr><td className="muted">Montant HT</td><td className="right">{montant(f.montantHt, f.devise)}</td></tr>
-                  <tr><td className="muted">TVA</td><td className="right">{montant(f.montantTva, f.devise)}</td></tr>
-                  <tr><td><strong>Total</strong></td><td className="right"><strong>{montant(f.montantTotal, f.devise)}</strong></td></tr>
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              variante="liste"
+              lignes={[
+                ...(f.lignes ?? []).map((l) => ({ libelle: <>{l.libelle ?? l.designation}</>, montant: montant(l.montant, f.devise) })),
+                ...(Number(f.remise) > 0 ? [{ libelle: <>Remise</>, montant: `− ${montant(f.remise, f.devise)}` }] : []),
+                { libelle: <span className="muted">Montant HT</span>, montant: montant(f.montantHt, f.devise) },
+                { libelle: <span className="muted">TVA</span>, montant: montant(f.montantTva, f.devise) },
+                { libelle: <strong>Total</strong>, montant: <strong>{montant(f.montantTotal, f.devise)}</strong> },
+              ]}
+              cleLigne={(_, i) => i}
+              colonnes={[
+                { cle: 'designation', titre: 'Désignation', cellule: (l) => l.libelle },
+                { cle: 'montant', titre: 'Montant', className: 'right', cellule: (l) => l.montant },
+              ]}
+            />
           </Card>
 
           <Card title={`Paiements (${f.paiements?.length ?? 0})`} flush>
             {!f.paiements?.length ? <div className="card-body muted small">Aucun paiement</div> : (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Référence</th><th>Méthode</th><th className="right">Montant</th><th>Statut</th><th>Date</th></tr></thead>
-                  <tbody>
-                    {f.paiements.map((p) => (
-                      <tr key={p.id}>
-                        <td className="mono">{p.reference}</td>
-                        <td>{libelle(METHODES_PAIEMENT, p.methode)}</td>
-                        <td className="right">{montant(p.montant, p.devise)}</td>
-                        <td><StatutBadge table={STATUTS_PAIEMENT} valeur={p.statut} /></td>
-                        <td className="small muted">{dateHeure(p.payeAt ?? p.createdAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveTable
+                lignes={f.paiements}
+                cleLigne={(p) => p.id}
+                colonnes={[
+                  { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (p) => p.reference },
+                  { cle: 'methode', titre: 'Méthode', cellule: (p) => libelle(METHODES_PAIEMENT, p.methode) },
+                  { cle: 'montant', titre: 'Montant', className: 'right', cellule: (p) => montant(p.montant, p.devise) },
+                  { cle: 'statut', titre: 'Statut', cellule: (p) => <StatutBadge table={STATUTS_PAIEMENT} valeur={p.statut} /> },
+                  { cle: 'date', titre: 'Date', className: 'small muted', cellule: (p) => dateHeure(p.payeAt ?? p.createdAt) },
+                ]}
+              />
             )}
           </Card>
         </div>

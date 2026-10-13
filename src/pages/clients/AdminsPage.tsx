@@ -9,6 +9,7 @@ import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@
 import { ROLES, libelle } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 const ROLES_ADMIN = { admin: 'Administrateur', super_admin: 'Super administrateur' };
 
@@ -70,30 +71,23 @@ export default function AdminsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.administrateurs.length ? <Empty>Aucun administrateur</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Nom</th><th>Contact</th><th>Rôle</th><th>Dernière connexion</th><th>État</th><th /></tr></thead>
-              <tbody>
-                {q.data.administrateurs.map((a) => (
-                  <tr key={a.id}>
-                    <td><strong>{nomComplet(a)}</strong>{a.id === moi?.id && <span className="muted small"> (vous)</span>}</td>
-                    <td className="small">{a.email}<div className="muted">{a.telephone}</div></td>
-                    <td><Badge ton={a.role === 'super_admin' ? 'violet' : 'bleu'}>{libelle(ROLES, a.role)}</Badge></td>
-                    <td className="small muted">{dateHeure(a.lastLoginAt)}</td>
-                    <td>{a.isActive ? <Badge ton="vert">Actif</Badge> : <Badge ton="rouge">Désactivé</Badge>}</td>
-                    <td>
-                      {superAdmin && a.id !== moi?.id && (
-                        <div className="actions">
-                          <button className="btn ghost sm" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
-                          <button className="btn secondary sm" onClick={() => basculer.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.administrateurs}
+            cleLigne={(a) => a.id}
+            colonnes={[
+              { cle: 'nom', titre: 'Nom', cellule: (a) => <><strong>{nomComplet(a)}</strong>{a.id === moi?.id && <span className="muted small"> (vous)</span>}</> },
+              { cle: 'contact', titre: 'Contact', className: 'small', cellule: (a) => <>{a.email}<div className="muted">{a.telephone}</div></> },
+              { cle: 'role', titre: 'Rôle', cellule: (a) => <Badge ton={a.role === 'super_admin' ? 'violet' : 'bleu'}>{libelle(ROLES, a.role)}</Badge> },
+              { cle: 'connexion', titre: 'Dernière connexion', className: 'small muted', priorite: 'basse', cellule: (a) => dateHeure(a.lastLoginAt) },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (a) => (a.isActive ? <Badge ton="vert">Actif</Badge> : <Badge ton="rouge">Désactivé</Badge>) },
+              { cle: 'actions', cellule: (a) => superAdmin && a.id !== moi?.id && (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn secondary sm" onClick={() => basculer.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

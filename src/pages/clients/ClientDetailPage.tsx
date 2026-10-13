@@ -8,6 +8,7 @@ import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Sta
 import { CATEGORIES_COURT, PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type ClientDetail = Client & { stats: { nbColisEnvoyes: number; nbColisLivres: number; encours: number } };
 
@@ -62,23 +63,19 @@ export default function ClientDetailPage() {
       <div className="grid grid-main-side">
         <Card title="Expéditions" flush>
           {colis.isLoading ? <Loader /> : !colis.data?.colis.length ? <Empty>Aucune expédition</Empty> : (
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Référence</th><th>Cat.</th><th>Destinataire</th><th className="right">Montant</th><th>Statut</th><th>Date</th></tr></thead>
-                <tbody>
-                  {colis.data.colis.map((c) => (
-                    <tr key={c.id} className="cliquable" onClick={() => navigate(`/colis/${c.id}`)}>
-                      <td className="mono">{c.reference}</td>
-                      <td><Badge ton="bleu">{CATEGORIES_COURT[c.categorie] ?? c.categorie}</Badge></td>
-                      <td>{c.destinataireNom}</td>
-                      <td className="right">{montant(c.montantTotal, c.devise)}</td>
-                      <td><StatutBadge table={STATUTS_COLIS} valeur={c.statut} /></td>
-                      <td className="small muted">{date(c.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable
+              lignes={colis.data.colis}
+              cleLigne={(c) => c.id}
+              onLigne={(c) => navigate(`/colis/${c.id}`)}
+              colonnes={[
+                { cle: 'reference', titre: 'Référence', className: 'mono', cellule: (c) => c.reference },
+                { cle: 'categorie', titre: 'Cat.', cellule: (c) => <Badge ton="bleu">{CATEGORIES_COURT[c.categorie] ?? c.categorie}</Badge> },
+                { cle: 'destinataire', titre: 'Destinataire', cellule: (c) => c.destinataireNom },
+                { cle: 'montant', titre: 'Montant', className: 'right', cellule: (c) => montant(c.montantTotal, c.devise) },
+                { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
+                { cle: 'date', titre: 'Date', className: 'small muted', priorite: 'basse', cellule: (c) => date(c.createdAt) },
+              ]}
+            />
           )}
           <Pagination info={colis.data?.pagination} onPage={setPage} />
         </Card>

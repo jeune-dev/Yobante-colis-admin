@@ -6,6 +6,7 @@ import { FormModal, type ChampDef } from '@/components/FormModal';
 import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface JourFerie { id: string; date: string; pays: string; libelle: string; recurrent: boolean }
 
@@ -49,29 +50,24 @@ export default function JoursFeriesPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun jour férié</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Libellé</th><th>Pays</th><th>Récurrence</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((j) => (
-                  <tr key={j.id}>
-                    <td>{new Date(j.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</td>
-                    <td><strong>{j.libelle}</strong></td>
-                    <td>{libelle(PAYS, j.pays)}</td>
-                    <td>{j.recurrent ? <Badge ton="bleu">Chaque année</Badge> : <Badge>Ponctuel</Badge>}</td>
-                    <td>
-                      <div className="actions">
-                        <button className="btn ghost sm" title="Modifier" onClick={() => setEdition(j)}><Icon name="pencil" size={14} /></button>
-                        <button className="btn ghost sm" title="Supprimer" onClick={() => confirm(`Supprimer ${j.libelle} ?`) && supprimer.mutate(j)}>
-                          <Icon name="trash-2" size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(j) => j.id}
+            colonnes={[
+              { cle: 'date', titre: 'Date', mobile: 'soustitre', cellule: (j) => new Date(j.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }) },
+              { cle: 'libelle', titre: 'Libellé', mobile: 'titre', cellule: (j) => <strong>{j.libelle}</strong> },
+              { cle: 'pays', titre: 'Pays', cellule: (j) => libelle(PAYS, j.pays) },
+              { cle: 'recurrence', titre: 'Récurrence', mobile: 'badge', cellule: (j) => (j.recurrent ? <Badge ton="bleu">Chaque année</Badge> : <Badge>Ponctuel</Badge>) },
+              { cle: 'actions', cellule: (j) => (
+                <div className="actions">
+                  <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(j)}><Icon name="pencil" size={14} /></button>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${j.libelle} ?`) && supprimer.mutate(j)}>
+                    <Icon name="trash-2" size={14} />
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
       </Card>
 

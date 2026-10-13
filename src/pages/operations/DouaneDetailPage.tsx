@@ -11,6 +11,7 @@ import {
 import { dateHeure, montant, ouvrirDocument, poids, urlSure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
 import type { ArticleDouane, Declaration } from './DouanePage';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type Dialogue = null | 'modifier' | 'statut' | 'article' | 'document';
 
@@ -76,29 +77,24 @@ export default function DouaneDetailPage() {
         <div>
           <Card title={`Articles déclarés (${d.articles?.length ?? 0})`} right={<button className="btn sm" onClick={() => setDialogue('article')}><Icon name="plus" size={13} /> Article</button>} flush>
             {!d.articles?.length ? <Empty>Aucun article : la déclaration doit détailler le contenu ligne à ligne.</Empty> : (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Désignation</th><th>Code SH</th><th>Qté</th><th className="right">Valeur unit.</th><th>Origine</th><th>Droits</th><th>État</th><th /></tr></thead>
-                  <tbody>
-                    {d.articles.map((a) => (
-                      <tr key={a.id}>
-                        <td><strong>{a.designation}</strong>{a.marque && <div className="muted small">{a.marque}</div>}</td>
-                        <td className="mono">{a.codeSh || '—'}</td>
-                        <td>{Number(a.quantite)} {libelle(UNITES_DOUANE, a.unite).toLowerCase()}</td>
-                        <td className="right">{montant(a.valeurUnitaire, d.devise)}</td>
-                        <td>{a.paysOrigine || '—'}</td>
-                        <td>{a.tauxDroits != null ? `${Number(a.tauxDroits)} %` : '—'}</td>
-                        <td className="small">{libelle(ETATS_MARCHANDISE, a.etat)}</td>
-                        <td>
-                          <button className="btn ghost sm" title="Retirer" onClick={() => confirm(`Retirer ${a.designation} ?`) && retirer.mutate(a)}>
-                            <Icon name="trash-2" size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveTable
+                lignes={d.articles}
+                cleLigne={(a) => a.id}
+                colonnes={[
+                  { cle: 'designation', titre: 'Désignation', cellule: (a) => <><strong>{a.designation}</strong>{a.marque && <div className="muted small">{a.marque}</div>}</> },
+                  { cle: 'codeSh', titre: 'Code SH', className: 'mono', cellule: (a) => a.codeSh || '—' },
+                  { cle: 'quantite', titre: 'Qté', cellule: (a) => `${Number(a.quantite)} ${libelle(UNITES_DOUANE, a.unite).toLowerCase()}` },
+                  { cle: 'valeur', titre: 'Valeur unit.', className: 'right', cellule: (a) => montant(a.valeurUnitaire, d.devise) },
+                  { cle: 'origine', titre: 'Origine', cellule: (a) => a.paysOrigine || '—' },
+                  { cle: 'droits', titre: 'Droits', cellule: (a) => (a.tauxDroits != null ? `${Number(a.tauxDroits)} %` : '—') },
+                  { cle: 'etat', titre: 'État', className: 'small', cellule: (a) => libelle(ETATS_MARCHANDISE, a.etat) },
+                  { cle: 'actions', cellule: (a) => (
+                    <button className="btn ghost sm" title="Retirer" aria-label="Retirer" onClick={() => confirm(`Retirer ${a.designation} ?`) && retirer.mutate(a)}>
+                      <Icon name="trash-2" size={14} />
+                    </button>
+                  ) },
+                ]}
+              />
             )}
           </Card>
 

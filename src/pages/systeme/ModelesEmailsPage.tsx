@@ -5,6 +5,7 @@ import Icon from '@/components/Icon';
 import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
 import { dateHeure } from '@/lib/format';
 import { useInvalider } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Modele {
   code: string;
@@ -35,26 +36,22 @@ export default function ModelesEmailsPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.length ? <Empty>Aucun modèle</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Modèle</th><th>Sujet</th><th>Variables</th><th>Version</th><th /></tr></thead>
-              <tbody>
-                {q.data.map((m) => (
-                  <tr key={m.code} className="cliquable" onClick={() => setEdition(m)}>
-                    <td><span className="mono">{m.code}</span><div className="muted small">{m.description}</div></td>
-                    <td className="small">{m.sujet}</td>
-                    <td className="small mono">{m.variables.map((v) => `{{${v}}}`).join(' ')}</td>
-                    <td>
-                      {m.personnalise ? <Badge ton="violet">Personnalisé</Badge> : <Badge>Par défaut</Badge>}
-                      {!m.isActive && <> <Badge ton="rouge">Désactivé</Badge></>}
-                      {m.modifieLe && <div className="muted small">{dateHeure(m.modifieLe)}</div>}
-                    </td>
-                    <td><Icon name="pencil" size={14} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data}
+            cleLigne={(m) => m.code}
+            onLigne={setEdition}
+            colonnes={[
+              { cle: 'modele', titre: 'Modèle', cellule: (m) => <><span className="mono">{m.code}</span><div className="muted small">{m.description}</div></> },
+              { cle: 'sujet', titre: 'Sujet', className: 'small', cellule: (m) => m.sujet },
+              { cle: 'variables', titre: 'Variables', className: 'small mono', priorite: 'basse', cellule: (m) => m.variables.map((v) => `{{${v}}}`).join(' ') },
+              { cle: 'version', titre: 'Version', cellule: (m) => <>
+                {m.personnalise ? <Badge ton="violet">Personnalisé</Badge> : <Badge>Par défaut</Badge>}
+                {!m.isActive && <> <Badge ton="rouge">Désactivé</Badge></>}
+                {m.modifieLe && <div className="muted small">{dateHeure(m.modifieLe)}</div>}
+              </> },
+              { cle: 'icone', mobile: 'masque', cellule: () => <Icon name="pencil" size={14} /> },
+            ]}
+          />
         )}
       </Card>
       {edition && <DialogueModele modele={edition} onClose={() => setEdition(null)} />}

@@ -10,6 +10,7 @@ import { OPTIONS_PAYS, PAYS, SERVICES_POINT, TYPES_POINT, libelle } from '@/lib/
 import { useFiltres, useInvalider } from '@/lib/hooks';
 import { usePointsOptions, useVillesOptions } from '@/lib/options';
 import { champsPoint } from './pointChamps';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export interface Point extends PointRef {
   type: string;
@@ -95,31 +96,25 @@ export default function PointsCollectePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.points.length ? <Empty>Aucun point de collecte</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Code</th><th>Nom</th><th>Type</th><th>Ville</th><th>Prestations</th><th>Stock</th><th>État</th></tr></thead>
-              <tbody>
-                {q.data.points.map((p) => (
-                  <tr key={p.id} className="cliquable" onClick={() => navigate(`/points-collecte/${p.id}`)}>
-                    <td className="mono">{p.code}</td>
-                    <td><strong>{p.nom}</strong><div className="muted small">{p.adresse}</div></td>
-                    <td>{libelle(TYPES_POINT, p.type)}</td>
-                    <td className="small">{p.ville?.nom ?? '—'} ({libelle(PAYS, p.pays)})</td>
-                    <td className="small">{p.services?.map((s) => libelle(SERVICES_POINT, s)).join(', ') || '—'}</td>
-                    <td className="small">
-                      {p.colisEnStock ?? 0}{p.capaciteMaxColis ? ` / ${p.capaciteMaxColis}` : ''}
-                      {p.sature && <> <Badge ton="rouge">Saturé</Badge></>}
-                    </td>
-                    <td>
-                      {!p.isActive ? <Badge ton="gris">Inactif</Badge>
-                        : p.enMaintenance ? <Badge ton="orange">Maintenance</Badge>
-                        : <Badge ton="vert">Actif</Badge>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.points}
+            cleLigne={(p) => p.id}
+            onLigne={(p) => navigate(`/points-collecte/${p.id}`)}
+            colonnes={[
+              { cle: 'code', titre: 'Code', className: 'mono', mobile: 'soustitre', cellule: (p) => p.code },
+              { cle: 'nom', titre: 'Nom', mobile: 'titre', cellule: (p) => <><strong>{p.nom}</strong><div className="muted small">{p.adresse}</div></> },
+              { cle: 'type', titre: 'Type', cellule: (p) => libelle(TYPES_POINT, p.type) },
+              { cle: 'ville', titre: 'Ville', className: 'small', cellule: (p) => `${p.ville?.nom ?? '—'} (${libelle(PAYS, p.pays)})` },
+              { cle: 'prestations', titre: 'Prestations', className: 'small', priorite: 'basse', cellule: (p) => p.services?.map((s) => libelle(SERVICES_POINT, s)).join(', ') || '—' },
+              { cle: 'stock', titre: 'Stock', className: 'small', cellule: (p) => <>
+                {p.colisEnStock ?? 0}{p.capaciteMaxColis ? ` / ${p.capaciteMaxColis}` : ''}
+                {p.sature && <> <Badge ton="rouge">Saturé</Badge></>}
+              </> },
+              { cle: 'etat', titre: 'État', mobile: 'badge', cellule: (p) => (!p.isActive ? <Badge ton="gris">Inactif</Badge>
+                : p.enMaintenance ? <Badge ton="orange">Maintenance</Badge>
+                : <Badge ton="vert">Actif</Badge>) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

@@ -8,6 +8,7 @@ import { PAYS, ROLES, libelle } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { FormModal } from '@/components/FormModal';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 type Membre = Client & { pointAffectation?: PointRef };
 
@@ -48,35 +49,30 @@ export default function PersonnelPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.personnel.length ? <Empty>Aucun membre du personnel</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Nom</th><th>Rôle</th><th>Contact</th><th>Pays</th><th>Point</th><th>Dernière connexion</th><th>État</th></tr></thead>
-              <tbody>
-                {q.data.personnel.map((m) => (
-                  <tr key={m.id}>
-                    <td><strong>{nomComplet(m)}</strong></td>
-                    <td><Badge ton={m.role === 'coursier' ? 'cyan' : 'violet'}>{libelle(ROLES, m.role)}</Badge></td>
-                    <td className="small">{m.email}<div className="muted">{m.telephone}</div></td>
-                    <td>{libelle(PAYS, m.pays)}</td>
-                    <td className="small">
-                      {m.pointAffectation?.nom
-                        ?? (m.role === 'agent_point'
-                          ? <span title="Sans point de rattachement, cet agent ne voit aucun colis"><Badge ton="rouge">Aucun point</Badge></span>
-                          : '—')}
-                    </td>
-                    <td className="small muted">{dateHeure(m.lastLoginAt)}</td>
-                    <td>
-                      <button className="btn ghost sm" onClick={() => setEdition(m)} title="Modifier"><Icon name="pencil" size={14} /></button>{' '}
-                      <button className={`btn sm ${m.isActive ? 'secondary' : 'danger'}`}
-                        onClick={() => statut.mutate({ id: m.id, isActive: !m.isActive })}>
-                        {m.isActive ? 'Actif' : 'Désactivé'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.personnel}
+            cleLigne={(m) => m.id}
+            colonnes={[
+              { cle: 'nom', titre: 'Nom', cellule: (m) => <strong>{nomComplet(m)}</strong> },
+              { cle: 'role', titre: 'Rôle', mobile: 'badge', cellule: (m) => <Badge ton={m.role === 'coursier' ? 'cyan' : 'violet'}>{libelle(ROLES, m.role)}</Badge> },
+              { cle: 'contact', titre: 'Contact', className: 'small', cellule: (m) => <>{m.email}<div className="muted">{m.telephone}</div></> },
+              { cle: 'pays', titre: 'Pays', priorite: 'basse', cellule: (m) => libelle(PAYS, m.pays) },
+              { cle: 'point', titre: 'Point', className: 'small', cellule: (m) => m.pointAffectation?.nom
+                ?? (m.role === 'agent_point'
+                  ? <span title="Sans point de rattachement, cet agent ne voit aucun colis"><Badge ton="rouge">Aucun point</Badge></span>
+                  : '—') },
+              { cle: 'connexion', titre: 'Dernière connexion', className: 'small muted', priorite: 'basse', cellule: (m) => dateHeure(m.lastLoginAt) },
+              { cle: 'actions', titre: 'État', cellule: (m) => (
+                <div className="actions">
+                  <button className="btn ghost sm" onClick={() => setEdition(m)} title="Modifier" aria-label="Modifier"><Icon name="pencil" size={14} /></button>
+                  <button className={`btn sm ${m.isActive ? 'secondary' : 'danger'}`}
+                    onClick={() => statut.mutate({ id: m.id, isActive: !m.isActive })}>
+                    {m.isActive ? 'Actif' : 'Désactivé'}
+                  </button>
+                </div>
+              ) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

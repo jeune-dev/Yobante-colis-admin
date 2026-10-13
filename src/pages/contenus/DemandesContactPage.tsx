@@ -6,6 +6,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, StatutBa
 import { dateHeure } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
 import type { PaginationInfo } from '@/components/ui';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 interface Demande {
   id: string;
@@ -63,32 +64,27 @@ export default function DemandesContactPage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.demandes.length ? <Empty>Aucune demande</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Contact</th><th>Site</th><th>Message</th><th>Reçue le</th><th>Statut</th><th /></tr></thead>
-              <tbody>
-                {q.data.demandes.map((d) => (
-                  <tr key={d.id}>
-                    <td>
-                      <strong>{d.prenom} {d.nom}</strong>
-                      <div className="small muted">{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</div>
-                    </td>
-                    <td className="small">{SOURCES[d.source] ?? d.source}</td>
-                    <td className="small" style={{ maxWidth: 420 }}>
-                      {d.sujet && <strong>{d.sujet}<br /></strong>}
-                      {d.message}
-                    </td>
-                    <td className="small muted">{dateHeure(d.createdAt)}</td>
-                    <td>
-                      <StatutBadge table={STATUTS_DEMANDE_CONTACT} valeur={d.statut} />
-                      {d.traiteLe && <div className="muted small">{dateHeure(d.traiteLe)}</div>}
-                    </td>
-                    <td>{d.statut === 'en_attente' && <button className="btn secondary sm" onClick={() => setReponse(d)}>Répondre</button>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.demandes}
+            cleLigne={(d) => d.id}
+            colonnes={[
+              { cle: 'contact', titre: 'Contact', cellule: (d) => <>
+                <strong>{d.prenom} {d.nom}</strong>
+                <div className="small muted">{d.email}{d.telephone ? ` · ${d.telephone}` : ''}</div>
+              </> },
+              { cle: 'site', titre: 'Site', className: 'small', cellule: (d) => SOURCES[d.source] ?? d.source },
+              { cle: 'message', titre: 'Message', className: 'small texte-limite', cellule: (d) => <>
+                {d.sujet && <strong>{d.sujet}<br /></strong>}
+                {d.message}
+              </> },
+              { cle: 'recue', titre: 'Reçue le', className: 'small muted', cellule: (d) => dateHeure(d.createdAt) },
+              { cle: 'statut', titre: 'Statut', cellule: (d) => <>
+                <StatutBadge table={STATUTS_DEMANDE_CONTACT} valeur={d.statut} />
+                {d.traiteLe && <div className="muted small">{dateHeure(d.traiteLe)}</div>}
+              </> },
+              { cle: 'actions', cellule: (d) => d.statut === 'en_attente' && <button className="btn secondary sm" onClick={() => setReponse(d)}>Répondre</button> },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>

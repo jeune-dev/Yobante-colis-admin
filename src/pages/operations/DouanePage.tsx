@@ -6,6 +6,7 @@ import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, St
 import { INCOTERMS, OPTIONS_PAYS, PAYS, STATUTS_DOUANE, TYPES_CONTENU, libelle } from '@/lib/labels';
 import { date, montant } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 export interface Declaration {
   id: string;
@@ -105,26 +106,22 @@ export default function DouanePage() {
       <ErrorBox error={q.error} />
       <Card flush>
         {q.isLoading ? <Loader /> : !q.data?.declarations.length ? <Empty>Aucune déclaration</Empty> : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Colis</th><th>N° déclaration</th><th>Sens</th><th>Nature</th><th>Incoterm</th><th className="right">Valeur</th><th className="right">Droits + taxes est.</th><th>Statut</th><th>Créée le</th></tr></thead>
-              <tbody>
-                {q.data.declarations.map((d) => (
-                  <tr key={d.id} className="cliquable" onClick={() => navigate(`/douane/${d.id}`)}>
-                    <td className="mono">{d.colis?.reference ?? '—'}</td>
-                    <td className="small">{d.numeroDeclaration || '—'}</td>
-                    <td className="small">{libelle(PAYS, d.paysExport)} → {libelle(PAYS, d.paysImport)}</td>
-                    <td className="small">{libelle(TYPES_CONTENU, d.motifExport)}</td>
-                    <td title={INCOTERMS[d.incoterm]}>{d.incoterm}</td>
-                    <td className="right">{montant(d.valeurTotale, d.devise)}</td>
-                    <td className="right">{montant(Number(d.droitsEstimes) + Number(d.taxesEstimees), d.devise)}</td>
-                    <td><StatutBadge table={STATUTS_DOUANE} valeur={d.statut} /></td>
-                    <td className="small muted">{date(d.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable
+            lignes={q.data.declarations}
+            cleLigne={(d) => d.id}
+            onLigne={(d) => navigate(`/douane/${d.id}`)}
+            colonnes={[
+              { cle: 'colis', titre: 'Colis', className: 'mono', cellule: (d) => d.colis?.reference ?? '—' },
+              { cle: 'numero', titre: 'N° déclaration', className: 'small', cellule: (d) => d.numeroDeclaration || '—' },
+              { cle: 'sens', titre: 'Sens', className: 'small', cellule: (d) => <>{libelle(PAYS, d.paysExport)} → {libelle(PAYS, d.paysImport)}</> },
+              { cle: 'nature', titre: 'Nature', className: 'small', priorite: 'basse', cellule: (d) => libelle(TYPES_CONTENU, d.motifExport) },
+              { cle: 'incoterm', titre: 'Incoterm', priorite: 'basse', cellule: (d) => <span title={INCOTERMS[d.incoterm]}>{d.incoterm}</span> },
+              { cle: 'valeur', titre: 'Valeur', className: 'right', cellule: (d) => montant(d.valeurTotale, d.devise) },
+              { cle: 'droits', titre: 'Droits + taxes est.', className: 'right', cellule: (d) => montant(Number(d.droitsEstimes) + Number(d.taxesEstimees), d.devise) },
+              { cle: 'statut', titre: 'Statut', cellule: (d) => <StatutBadge table={STATUTS_DOUANE} valeur={d.statut} /> },
+              { cle: 'cree', titre: 'Créée le', className: 'small muted', priorite: 'basse', cellule: (d) => date(d.createdAt) },
+            ]}
+          />
         )}
         <Pagination info={q.data?.pagination} onPage={setPage} />
       </Card>
