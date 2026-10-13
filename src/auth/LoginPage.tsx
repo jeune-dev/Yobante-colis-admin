@@ -51,17 +51,6 @@ export default function LoginPage() {
             <div className="login-mark">
               <img src={logo} alt="Yobante" />
             </div>
-            <h1 className="login-headline">
-              Pilotez vos expéditions <span>Yobante</span> depuis un seul espace
-            </h1>
-            <p className="login-description">
-              La plateforme d'administration unifiée pour vos colis, vos conteneurs et votre réseau.
-            </p>
-            <ul className="login-benefits">
-              <li><span><Icon name="check" size={14} /></span> Suivi des colis et des expéditions</li>
-              <li><span><Icon name="check" size={14} /></span> Gestion des conteneurs et réclamations</li>
-              <li><span><Icon name="check" size={14} /></span> Pilotage de vos équipes et opérations</li>
-            </ul>
           </div>
           <p className="login-copyright">© {new Date().getFullYear()} Yobante · Administration</p>
         </section>
@@ -69,7 +58,7 @@ export default function LoginPage() {
         <section className="login-panel" aria-labelledby="login-heading">
           <form className="login-form" onSubmit={soumettre}>
             <header className="login-form-heading">
-              <h2 id="login-heading">Connexion</h2>
+              <h1 id="login-heading">Connexion</h1>
               <p>Accédez à votre espace d'administration</p>
             </header>
 
