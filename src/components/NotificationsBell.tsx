@@ -43,14 +43,14 @@ export default function NotificationsBell() {
 
   const total = compteur.data ?? 0;
   return (
-    <div style={{ position: 'relative' }}>
-      <button className="btn ghost sm" onClick={() => setOuvert((o) => !o)} title="Notifications" style={{ position: 'relative' }}>
+    <div className="bell">
+      <button className="btn ghost sm" onClick={() => setOuvert((o) => !o)} title="Notifications" aria-label="Notifications" aria-expanded={ouvert}>
         <Icon name="inbox" size={19} />
         {total > 0 && <span className="bell-count">{total > 99 ? '99+' : total}</span>}
       </button>
       {ouvert && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 60 }} onClick={() => setOuvert(false)} />
+          <div className="bell-voile" onClick={() => setOuvert(false)} />
           <div className="bell-pop">
             <div className="bell-head">
               <strong>Notifications</strong>

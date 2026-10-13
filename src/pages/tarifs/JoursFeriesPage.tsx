@@ -144,7 +144,7 @@ function DialogueImport({ onClose }: { onClose: () => void }) {
         </label>
       </div>
       <Field label="Jours (un par ligne)" hint="Format : AAAA-MM-JJ;Libellé — par ex. 2027-04-04;Fête de l'Indépendance">
-        <textarea className="textarea mono" style={{ minHeight: 180 }} value={texte} onChange={(e) => setTexte(e.target.value)} />
+        <textarea className="textarea mono textarea-moyen" value={texte} onChange={(e) => setTexte(e.target.value)} />
       </Field>
       {invalides.length > 0 && <p className="small" style={{ color: 'var(--red)' }}>{invalides.length} ligne(s) invalide(s)</p>}
     </Modal>

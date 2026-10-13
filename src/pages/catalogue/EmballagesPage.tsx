@@ -166,9 +166,9 @@ function DialoguePhotos({ emballage, onClose }: { emballage: Emballage; onClose:
       {!emballage.photos?.length ? <p className="muted small">Aucune photo</p> : (
         <div className="photos">
           {emballage.photos.map((p) => (
-            <div key={p.publicId} style={{ position: 'relative' }}>
+            <div key={p.publicId} className="photo-gestion">
               <img src={p.url} alt="" />
-              <button className="btn danger sm" style={{ position: 'absolute', top: 4, right: 4 }} onClick={() => retirer(p.publicId)}>
+              <button className="btn danger sm photo-retirer" aria-label="Retirer la photo" onClick={() => retirer(p.publicId)}>
                 <Icon name="x" size={12} />
               </button>
             </div>

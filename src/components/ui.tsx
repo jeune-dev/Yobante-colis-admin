@@ -264,12 +264,23 @@ export function Chips<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const rangee = useRef<HTMLDivElement>(null);
+  // Sur mobile la rangée défile : la puce active est ramenée dans la vue
+  useEffect(() => {
+    const r = rangee.current;
+    const active = r?.querySelector<HTMLElement>('.chip.active');
+    if (r && active && r.scrollWidth > r.clientWidth) {
+      r.scrollTo({ left: active.offsetLeft - r.offsetLeft - 8, behavior: 'smooth' });
+    }
+  }, [value]);
+
   return (
-    <div className="chips">
+    <div className="chips" ref={rangee} data-scroll-x role="group">
       {options.map((o) => (
         <button
           key={o.value}
           className={`chip${value === o.value ? ' active' : ''}`}
+          aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
         >
           {o.label}

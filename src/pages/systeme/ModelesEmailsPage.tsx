@@ -115,13 +115,13 @@ function DialogueModele({ modele, onClose }: { modele: Modele; onClose: () => vo
       </p>
       <Field label="Sujet"><input className="input" value={sujet} onChange={(e) => setSujet(e.target.value)} /></Field>
       <Field label="Contenu HTML">
-        <textarea className="textarea mono" style={{ minHeight: 260 }} value={corpsHtml} onChange={(e) => setCorps(e.target.value)} />
+        <textarea className="textarea mono textarea-grand" value={corpsHtml} onChange={(e) => setCorps(e.target.value)} />
       </Field>
       <label className="check"><input type="checkbox" checked={isActive} onChange={(e) => setActive(e.target.checked)} /> Envoi activé</label>
       {apercu && (
         <>
           <div className="section-label">Aperçu (valeurs d'exemple)</div>
-          <iframe title="Aperçu" srcDoc={apercu} sandbox="" style={{ width: '100%', height: 420, border: '1px solid var(--border)', borderRadius: 8, background: '#fff' }} />
+          <iframe title="Aperçu" srcDoc={apercu} sandbox="" className="apercu-email" />
         </>
       )}
     </Modal>

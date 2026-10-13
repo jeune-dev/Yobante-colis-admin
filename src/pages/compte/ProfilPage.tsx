@@ -60,8 +60,8 @@ export default function ProfilPage() {
     <>
       <div className="hero">
         {u.avatarUrl
-          ? <img src={u.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }} />
-          : <div className="ava" style={{ width: 56, height: 56, fontSize: '1.1rem' }}>{initiales(u)}</div>}
+          ? <img src={u.avatarUrl} alt="" className="avatar-grand" />
+          : <div className="ava avatar-grand">{initiales(u)}</div>}
         <div>
           <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{nomComplet(u)}</div>
           <div className="muted small">{libelle(ROLES, u.role)}</div>

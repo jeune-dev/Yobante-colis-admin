@@ -139,7 +139,7 @@ export default function ColisListPage() {
 
       {avances && (
         <Card>
-          <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+          <div className="form-row grille-filtres">
             <input className="input" placeholder="Expéditeur" value={filtres.expediteur} onChange={(e) => set('expediteur', e.target.value)} />
             <input className="input" placeholder="Destinataire" value={filtres.destinataire} onChange={(e) => set('destinataire', e.target.value)} />
             <input className="input" placeholder="Produit (smartphone, frigo…)" value={filtres.produit} onChange={(e) => set('produit', e.target.value)} />

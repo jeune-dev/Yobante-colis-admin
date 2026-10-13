@@ -1869,16 +1869,26 @@ svg {
     width: 100%;
   }
 
+  /* Rangée de puces défilante : accroche douce et dégradé à droite tant
+     qu'il reste des puces à voir */
   .toolbar .chips {
     flex: 1 1 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     padding-bottom: 2px;
     scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 8px;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
   }
 
   .toolbar .chips .chip {
     flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  .toolbar .chips .chip:last-child {
+    margin-right: 28px;
   }
 
   .toolbar .actions .btn,
@@ -2495,4 +2505,58 @@ html.modale-ouverte {
 
 .form-intro {
   margin-bottom: 12px;
+}
+
+/* Cloche des notifications (remplace les positions inline) */
+.bell,
+.bell > .btn {
+  position: relative;
+}
+
+.bell-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+/* Zones de saisie et aperçus à hauteur adaptée à l'écran */
+.textarea-moyen {
+  min-height: 180px;
+}
+
+.textarea-grand {
+  min-height: clamp(180px, 35dvh, 260px);
+}
+
+.apercu-email {
+  display: block;
+  width: 100%;
+  height: clamp(280px, 55dvh, 420px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.avatar-grand {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  font-size: 1.1rem;
+}
+
+/* Filtres avancés : autant de colonnes que la largeur le permet */
+.form-row.grille-filtres {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 0.6rem 0.9rem;
+}
+
+.photo-gestion {
+  position: relative;
+}
+
+.photo-retirer {
+  position: absolute;
+  top: 4px;
+  right: 4px;
 }
