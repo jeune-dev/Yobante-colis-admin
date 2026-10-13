@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '@/logo.png';
 import { api } from '@/api/client';
-import { ErrorBox, Field, toast } from '@/components/ui';
+import Icon from '@/components/Icon';
+import { ErrorBox, toast } from '@/components/ui';
 
 const REGLE_MDP = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,72}$/;
 
@@ -49,43 +50,70 @@ export default function MotDePasseOubliePage() {
     }
   };
 
+  // Champ au style de la page de connexion : libellé, icône, aide éventuelle
+  const champ = (id: string, label: string, icone: string, input: ReactNode, aide?: string) => (
+    <div className="login-field">
+      <label className="login-label" htmlFor={id}>{label}</label>
+      <div className="login-input-wrap">
+        <Icon name={icone} size={16} />
+        {input}
+      </div>
+      {aide && <p className="login-aide">{aide}</p>}
+    </div>
+  );
+
   return (
     <main className="login-page">
-      <form className="reset-card" onSubmit={etape === 'email' ? demander : reinitialiser}>
-        <div className="login-brand-simple">
-          <img src={logo} alt="Yobante" />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>Mot de passe oublié</div>
-            <div className="muted small">{etape === 'email' ? 'Recevez un code de réinitialisation par email' : `Code envoyé à ${email}`}</div>
+      <section className="login-card" aria-labelledby="reset-heading">
+        <header className="login-card-head">
+          {/* Bandeau en dégradé bleu, seulement derrière le logo */}
+          <div className="login-card-banniere">
+            <span className="login-card-logo">
+              <img src={logo} alt="" aria-hidden="true" />
+            </span>
           </div>
-        </div>
-        <ErrorBox error={erreur} />
-        {etape === 'email' ? (
-          <Field label="Email du compte">
-            <input className="input" type="email" autoFocus required value={email} onChange={(e) => setEmail(e.target.value)} />
-          </Field>
-        ) : (
-          <>
-            <Field label="Code reçu (6 chiffres)">
-              <input className="input mono" inputMode="numeric" maxLength={6} autoFocus required value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
-            </Field>
-            <Field label="Nouveau mot de passe" hint="8 caractères min., une majuscule, un chiffre et un caractère spécial.">
-              <input className="input" type="password" autoComplete="new-password" required value={mdp} onChange={(e) => setMdp(e.target.value)} />
-            </Field>
-            <Field label="Confirmation">
-              <input className="input" type="password" autoComplete="new-password" required value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
-            </Field>
-          </>
-        )}
-        <button className="btn" style={{ width: '100%' }} disabled={envoi}>
-          {envoi ? 'Envoi…' : etape === 'email' ? 'Recevoir un code' : 'Réinitialiser'}
-        </button>
-        <div className="small" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between' }}>
-          <Link to="/login">← Retour à la connexion</Link>
-          {etape === 'code' && <a style={{ cursor: 'pointer' }} onClick={() => setEtape('email')}>Renvoyer un code</a>}
-        </div>
-      </form>
+          <h1 id="reset-heading" className="login-card-title">Mot de passe oublié</h1>
+          <p className="login-card-sub">
+            {etape === 'email' ? 'Recevez un code de réinitialisation par email' : `Code envoyé à ${email}`}
+          </p>
+        </header>
+
+        <form className="login-form" onSubmit={etape === 'email' ? demander : reinitialiser}>
+          <ErrorBox error={erreur} />
+          {etape === 'email' ? (
+            champ('reset-email', 'Email du compte', 'mail',
+              <input id="reset-email" className="login-input" type="email" autoComplete="email" inputMode="email"
+                placeholder="votre@email.com" autoFocus required value={email} onChange={(e) => setEmail(e.target.value)} />)
+          ) : (
+            <>
+              {champ('reset-code', 'Code reçu (6 chiffres)', 'inbox',
+                <input id="reset-code" className="login-input mono" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                  placeholder="000000" autoFocus required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />)}
+              {champ('reset-mdp', 'Nouveau mot de passe', 'lock',
+                <input id="reset-mdp" className="login-input" type="password" autoComplete="new-password"
+                  placeholder="••••••••" required value={mdp} onChange={(e) => setMdp(e.target.value)} />,
+                '8 caractères min., une majuscule, un chiffre et un caractère spécial.')}
+              {champ('reset-confirmation', 'Confirmation', 'lock',
+                <input id="reset-confirmation" className="login-input" type="password" autoComplete="new-password"
+                  placeholder="••••••••" required value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />)}
+            </>
+          )}
+
+          <button className="login-submit" disabled={envoi}>
+            {envoi ? 'Envoi…' : etape === 'email' ? 'Recevoir un code' : 'Réinitialiser'}
+          </button>
+
+          <div className="login-liens">
+            <Link to="/login">← Retour à la connexion</Link>
+            {etape === 'code' && <button type="button" className="lien" onClick={() => setEtape('email')}>Renvoyer un code</button>}
+          </div>
+        </form>
+
+        <p className="login-card-foot">
+          Accès réservé aux administrateurs Yobante
+          <br />© {new Date().getFullYear()} Yobante · Administration
+        </p>
+      </section>
     </main>
   );
 }
