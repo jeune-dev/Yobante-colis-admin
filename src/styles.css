@@ -1442,13 +1442,14 @@ tr.cliquable {
   border-radius: 10px;
   color: #929bad;
   background: #f6f8fc;
-  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease, color 150ms ease;
 }
 
 .login-input-wrap:focus-within {
-  border-color: #5679d3;
+  border-color: #2452bd;
+  color: #2452bd;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(36, 76, 173, 0.12);
+  box-shadow: 0 0 0 4px rgba(36, 76, 173, 0.12);
 }
 
 .login-input {
@@ -2078,9 +2079,11 @@ svg {
   outline-offset: 2px;
 }
 
+/* Champs : le focus est porté par leur bordure et leur halo, pas par un contour */
 .input:focus-visible,
 .select:focus-visible,
-.textarea:focus-visible {
+.textarea:focus-visible,
+.login-input:focus-visible {
   outline: none;
 }
 
