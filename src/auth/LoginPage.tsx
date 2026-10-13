@@ -45,77 +45,74 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      <div className="login-shell">
-        <section className="login-showcase" aria-label="Yobante administration">
-          <div className="login-showcase-content">
-            <div className="login-mark">
-              <img src={logo} alt="Yobante" />
+      <section className="login-card" aria-labelledby="login-heading">
+        <header className="login-card-head">
+          <span className="login-card-logo">
+            {/* Décoratif : la marque est déjà dans le titre */}
+            <img src={logo} alt="" aria-hidden="true" />
+          </span>
+          <h1 id="login-heading" className="login-card-title">Yobante Administration</h1>
+          <p className="login-card-sub">Connectez-vous à votre espace</p>
+        </header>
+
+        <form className="login-form" onSubmit={soumettre}>
+          <ErrorBox error={erreur} />
+
+          <div className="login-field">
+            <label className="login-label" htmlFor="login-identifiant">Email ou téléphone</label>
+            <div className="login-input-wrap">
+              <Icon name="mail" size={16} />
+              <input
+                id="login-identifiant"
+                className="login-input"
+                type="text"
+                autoFocus
+                autoComplete="username"
+                placeholder="votre@email.com"
+                value={identifiant}
+                onChange={(e) => setIdentifiant(e.target.value)}
+                required
+              />
             </div>
           </div>
-          <p className="login-copyright">© {new Date().getFullYear()} Yobante · Administration</p>
-        </section>
 
-        <section className="login-panel" aria-labelledby="login-heading">
-          <form className="login-form" onSubmit={soumettre}>
-            <header className="login-form-heading">
-              <h1 id="login-heading">Connexion</h1>
-              <p>Accédez à votre espace d'administration</p>
-            </header>
-
-            <ErrorBox error={erreur} />
-
-            <div className="login-field">
-              <label className="login-label" htmlFor="login-identifiant">Email ou téléphone</label>
-              <div className="login-input-wrap">
-                <Icon name="mail" size={17} />
-                <input
-                  id="login-identifiant"
-                  className="login-input"
-                  type="text"
-                  autoFocus
-                  autoComplete="username"
-                  placeholder="votre@email.com"
-                  value={identifiant}
-                  onChange={(e) => setIdentifiant(e.target.value)}
-                  required
-                />
-              </div>
+          <div className="login-field">
+            <label className="login-label" htmlFor="login-password">Mot de passe</label>
+            <div className="login-input-wrap">
+              <Icon name="lock" size={16} />
+              <input
+                id="login-password"
+                className="login-input"
+                type={passwordVisible ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                className="login-password-toggle"
+                type="button"
+                aria-label={passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-pressed={passwordVisible}
+                onClick={() => setPasswordVisible((visible) => !visible)}
+              >
+                <Icon name={passwordVisible ? 'eye-off' : 'eye'} size={15} />
+              </button>
             </div>
+          </div>
+          <Link to="/mot-de-passe-oublie" className="login-forgot">Mot de passe oublié ?</Link>
 
-            <div className="login-field">
-              <label className="login-label" htmlFor="login-password">Mot de passe</label>
-              <div className="login-input-wrap">
-                <Icon name="lock" size={17} />
-                <input
-                  id="login-password"
-                  className="login-input"
-                  type={passwordVisible ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Votre mot de passe"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  className="login-password-toggle"
-                  type="button"
-                  aria-label={passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                  aria-pressed={passwordVisible}
-                  onClick={() => setPasswordVisible((visible) => !visible)}
-                >
-                  <Icon name={passwordVisible ? 'eye-off' : 'eye'} size={17} />
-                </button>
-              </div>
-            </div>
-            <Link to="/mot-de-passe-oublie" className="login-forgot">Mot de passe oublié ?</Link>
+          <button className="login-submit" disabled={envoi}>
+            {envoi ? 'Connexion…' : 'Se connecter'}
+          </button>
+        </form>
 
-            <button className="login-submit" disabled={envoi}>
-              {envoi ? 'Connexion…' : 'Se connecter'}
-            </button>
-            <p className="login-footnote">Accès réservé aux administrateurs Yobante</p>
-          </form>
-        </section>
-      </div>
+        <p className="login-card-foot">
+          Accès réservé aux administrateurs Yobante
+          <br />© {new Date().getFullYear()} Yobante · Administration
+        </p>
+      </section>
     </main>
   );
 }
