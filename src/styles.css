@@ -1525,35 +1525,93 @@ tr.cliquable {
   }
 }
 
-/* Fenêtre basse (téléphone en paysage) : carte compacte */
-@media (max-height: 500px) {
-  .login-page {
-    padding-block: 0.75rem;
-  }
-
-  .login-card {
-    padding-block: 1.2rem;
+/* Petit téléphone peu haut (iPhone SE…) : en-tête resserré, carte entière à l'écran */
+@media (max-width: 479.98px) and (max-height: 600px) {
+  .login-card-banniere {
+    padding: 0.9rem 0;
   }
 
   .login-card-head {
-    margin-bottom: 0.9rem;
+    margin-bottom: 1.1rem;
+  }
+}
+
+/* Téléphone en paysage (écran bas) : une seule colonne ne tient pas en
+   hauteur. La carte passe sur deux colonnes — logo et titre à gauche,
+   formulaire et pied à droite — pour que « Se connecter » reste visible. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .login-page {
+    padding-block: calc(0.5rem + var(--safe-t)) calc(0.5rem + var(--safe-b));
   }
 
+  .login-card {
+    display: grid;
+    max-width: 680px;
+    grid-template-columns: minmax(170px, 36%) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 1.6rem;
+    padding: 1rem 1.4rem 1rem 0;
+    border-radius: 20px;
+  }
+
+  .login-card-head {
+    grid-row: 1 / 3;
+    align-self: start;
+    margin-bottom: 0;
+  }
+
+  /* Le bandeau couvre le haut de la colonne de gauche, bord à bord */
   .login-card-banniere {
-    margin-top: -1.2rem;
-    margin-bottom: 0.7rem;
-    padding: 0.7rem 0;
+    margin: -1rem 0 0.9rem;
+    padding: 1rem 0;
+    border-radius: 20px 0 0 0;
   }
 
   .login-card-logo {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+  }
+
+  .login-card-title {
+    padding: 0 0.6rem;
+    font-size: 1.15rem;
+  }
+
+  .login-card-sub {
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .login-form {
+    grid-column: 2;
+  }
+
+  .login-field {
+    margin-bottom: 0.5rem;
+  }
+
+  .login-label {
+    margin-bottom: 3px;
+  }
+
+  .login-input-wrap {
+    height: 40px;
+  }
+
+  .login-card .login-forgot {
+    margin: 0 0 0.5rem;
+  }
+
+  .login-submit {
+    min-height: 42px;
   }
 
   .login-card-foot {
-    margin-top: 0.9rem;
-    padding-top: 0.6rem;
+    grid-column: 2;
+    margin-top: 0.7rem;
+    padding-top: 0.5rem;
+    font-size: 0.72rem;
   }
 }
 
