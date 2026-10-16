@@ -357,10 +357,27 @@ const VERBES_JOURNAL: Record<string, string> = {
   activate: 'Activation', deactivate: 'Désactivation', create: 'Création', update: 'Modification',
   delete: 'Suppression', effectue: 'Enlèvement effectué', encaisser: 'Encaissement', rembourser: 'Remboursement',
   info: 'Information de suivi', refuse: 'Refus', proposer: 'Proposition tarifaire',
+  deposer: 'Dépôt',
+};
+
+/** Événements de remise au destinataire : jamais en lot, code et règlement contrôlés. */
+export const EVENEMENTS_REMISE = ['RETIRE', 'LIVRE'];
+
+/** Actions dont le libellé ne se déduit pas du dernier segment du code. */
+const ACTIONS_JOURNAL: Record<string, string> = {
+  'colis.remise.code': 'Remise · Code affiché au destinataire',
+  'colis.remise.confirmee': 'Remise · Confirmée dans l’application du destinataire',
+  'colis.remise.sans_application': 'Remise · Sans l’application (code de retrait)',
+  'admin.colis.remise_sans_reglement': 'Remise · Malgré une facture impayée',
+  'admin.colis.code_retrait': 'Colis · Code de retrait régénéré',
 };
 
 /** « admin.personnel.activate » → « Personnel · Activation » (repli : code brut). */
 export function libelleAction(code: string): string {
+  if (ACTIONS_JOURNAL[code]) return ACTIONS_JOURNAL[code];
+  // « colis.suivi.retire » → « Suivi · Retiré par le destinataire »
+  const suivi = /^colis\.suivi\.([a-z_]+)$/.exec(code);
+  if (suivi) return `Suivi · ${EVENEMENTS_SUIVI[suivi[1].toUpperCase()] ?? suivi[1]}`;
   const parties = code.split('.').filter((p) => p !== 'admin');
   const verbe = VERBES_JOURNAL[parties[parties.length - 1]];
   if (!verbe) return code;

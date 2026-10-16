@@ -153,6 +153,12 @@ export interface Colis {
   createdAt: string;
   enRetard?: boolean;
   transitionsPossibles?: string[];
+  /** Événements que l'utilisateur connecté peut enregistrer maintenant (rôle, étape, transition). */
+  evenementsPossibles?: CodeEvenement[];
+  /** Remise en attente : le destinataire a un compte et confirme la remise dans son application. */
+  destinataireACompte?: boolean;
+  /** Remise en attente : solde à encaisser avant toute remise (faux en paiement différé). */
+  reglementAvantRemise?: boolean;
   client?: Personne;
   villeDepart?: VilleRef;
   villeArrivee?: VilleRef;
@@ -246,3 +252,10 @@ export interface Reclamation {
 }
 
 export type Liste<K extends string, T> = { [key in K]: T[] } & { pagination: PaginationInfo };
+
+/** Événement de suivi enregistrable (catalogue ou possibles pour un colis). */
+export interface CodeEvenement {
+  code: string;
+  libelle: string;
+  statutInduit: string | null;
+}

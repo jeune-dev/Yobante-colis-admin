@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
-import type { Colis, Liste } from '@/api/types';
+import type { CodeEvenement, Colis, Liste } from '@/api/types';
 import { estAdmin, useAuth } from '@/auth/store';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { Badge, Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
-import { CATEGORIES, CATEGORIES_COURT, MODES_DEPOT, STATUTS_COLIS, TYPES_CONTENU } from '@/lib/labels';
+import { CATEGORIES, CATEGORIES_COURT, EVENEMENTS_REMISE, MODES_DEPOT, STATUTS_COLIS, TYPES_CONTENU } from '@/lib/labels';
 import { date, montant, poids, telecharger } from '@/lib/format';
 import { useFiltres, useInvalider } from '@/lib/hooks';
 
@@ -31,7 +31,6 @@ interface Statistiques {
   parCorridor: { corridor: string; total: number; poidsKg: number }[];
 }
 
-interface CodeEvenement { code: string; libelle: string; statutInduit: string | null }
 
 export default function ColisListPage() {
   const navigate = useNavigate();
@@ -206,11 +205,12 @@ export default function ColisListPage() {
       {lot && codes.data && (
         <FormModal
           title={`Événement pour ${selection.length} colis`}
-          intro={<p className="small">Le même événement est appliqué à chaque colis ; ceux dont le statut ne le permet pas sont signalés.</p>}
+          intro={<p className="small">Le même événement est appliqué à chaque colis ; ceux dont le statut ne le permet pas sont signalés. La remise au destinataire (retrait, livraison) se fait depuis la fiche de chaque colis.</p>}
           champs={[
             {
               name: 'codeEvenement', label: 'Événement', type: 'select', required: true, full: true,
-              options: codes.data.map((e) => ({
+              // La remise au destinataire se fait colis par colis (code et règlement contrôlés)
+              options: codes.data.filter((e) => !EVENEMENTS_REMISE.includes(e.code)).map((e) => ({
                 value: e.code,
                 label: `${e.libelle}${e.statutInduit ? ` → ${STATUTS_COLIS[e.statutInduit]?.label ?? e.statutInduit}` : ' (information)'}`,
               })),

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
-import type { Colis } from '@/api/types';
+import type { CodeEvenement, Colis } from '@/api/types';
 import Icon from '@/components/Icon';
 import { Badge, Card, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/components/ui';
 import {
@@ -78,7 +78,7 @@ export default function ColisDetailPage() {
               <Icon name="x" size={15} /> Refuser
             </button>
           )}
-          {!!c.transitionsPossibles?.length && (
+          {!!(c.evenementsPossibles ?? c.transitionsPossibles)?.length && (
             <button className="btn" onClick={() => setDialogue('evenement')}>
               <Icon name="plus" size={15} /> Événement de suivi
             </button>
@@ -96,6 +96,23 @@ export default function ColisDetailPage() {
           </button>
         </div>
       </div>
+
+      {c.destinataireACompte && (
+        <div className="alert info">
+          <Icon name="smartphone" size={16} />
+          <div>
+            Le destinataire a un compte Yobante Colis : l’agent ou le coursier lui affiche un code qu’il saisit dans
+            son application pour confirmer la réception. Sans l’application, l’agent remet avec le code de retrait ;
+            sans code de retrait, enregistrez vous-même la remise ici.
+          </div>
+        </div>
+      )}
+      {c.reglementAvantRemise && (
+        <div className="alert warn">
+          <Icon name="coins" size={16} />
+          <div>Solde à encaisser avant la remise au destinataire.</div>
+        </div>
+      )}
 
       {aEtudier && c.dateLimiteEtude && (
         <div className="alert warn">
@@ -425,18 +442,20 @@ function DialogueRefuser({ colis, onClose }: PropsDialogue) {
   );
 }
 
-interface CodeEvenement { code: string; libelle: string; statutInduit: string | null }
 
 function DialogueEvenement({ colis, onClose }: PropsDialogue) {
+  // Le serveur fournit les événements possibles (rôle, étape et transition) ; à défaut,
+  // repli sur le catalogue filtré par la machine à états
+  const serveur = colis.evenementsPossibles;
   const codes = useQuery({
     queryKey: ['codes-evenements'],
     queryFn: () => api.get<{ evenements: CodeEvenement[] }>('/admin/colis/codes-evenements').then((r) => r.evenements),
     staleTime: Infinity,
+    enabled: !serveur,
   });
-  // Seuls les événements compatibles avec la machine à états du colis sont proposés
-  const possibles = (codes.data ?? []).filter(
-    (e) => e.statutInduit === null || colis.transitionsPossibles?.includes(e.statutInduit)
-  );
+  const possibles =
+    serveur ??
+    (codes.data ?? []).filter((e) => e.statutInduit === null || colis.transitionsPossibles?.includes(e.statutInduit));
   const [codeEvenement, setCode] = useState('');
   const [lieu, setLieu] = useState('');
   const [pays, setPays] = useState('');
@@ -464,7 +483,7 @@ function DialogueEvenement({ colis, onClose }: PropsDialogue) {
     <Modal title="Enregistrer un événement de suivi" onClose={onClose}
       footer={<Pied onClose={onClose} envoi={a.isPending} libelleOk="Enregistrer"
         onOk={() => (codeEvenement ? a.mutate(undefined, { onSuccess: onClose }) : toast.error('Choisissez un événement'))} />}>
-      {codes.isLoading ? <Loader /> : (
+      {!serveur && codes.isLoading ? <Loader /> : (
         <>
           <Field label="Événement">
             <select className="select" value={codeEvenement} onChange={(e) => setCode(e.target.value)}>
