@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Client, Colis, Liste } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Stat, StatutBadge } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, KV, Loader, Modal, Pagination, Stat, StatutBadge, confirmer } from '@/components/ui';
 import { CATEGORIES_COURT, PAYS, STATUTS_COLIS, libelle } from '@/lib/labels';
 import { date, dateHeure, montant, nomComplet, urlSure } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
@@ -48,7 +48,7 @@ export default function ClientDetailPage() {
             <Icon name="settings" size={15} /> Conditions commerciales
           </button>
           <button className={`btn ${u.isActive ? 'danger' : 'success'}`}
-            onClick={() => confirm(u.isActive ? 'Suspendre ce compte ?' : 'Réactiver ce compte ?') && statut.mutate(!u.isActive)}>
+            onClick={() => confirmer(u.isActive ? 'Suspendre ce compte ?' : 'Réactiver ce compte ?').then((ok) => ok && statut.mutate(!u.isActive))}>
             {u.isActive ? 'Suspendre' : 'Réactiver'}
           </button>
         </div>

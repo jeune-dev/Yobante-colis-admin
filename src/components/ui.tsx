@@ -42,7 +42,12 @@ export function ErrorBox({ error }: { error: unknown }) {
 }
 
 export const Empty = ({ children = 'Aucun résultat' }: { children?: ReactNode }) => (
-  <div className="empty">{children}</div>
+  <div className="empty">
+    <span className="empty-icone" aria-hidden="true">
+      <Icon name="inbox" size={20} />
+    </span>
+    <div>{children}</div>
+  </div>
 );
 
 /* ── Cartes ──────────────────────────────────────────────────────────────── */
@@ -122,7 +127,8 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
-  large?: boolean;
+  /** `true` : fenêtre large ; `'xl'` : très large (éditeur à deux colonnes). */
+  large?: boolean | 'xl';
 }) {
   const overlay = useRef<HTMLDivElement>(null);
   const idTitre = useId();
@@ -150,7 +156,7 @@ export function Modal({
 
   return (
     <div ref={overlay} className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal${large ? ' large' : ''}`} role="dialog" aria-modal="true" aria-labelledby={idTitre} tabIndex={-1}>
+      <div className={`modal${large ? ' large' : ''}${large === 'xl' ? ' xl' : ''}`} role="dialog" aria-modal="true" aria-labelledby={idTitre} tabIndex={-1}>
         <div className="modal-head">
           <div className="modal-title" id={idTitre}>{title}</div>
           <button className="btn ghost sm" onClick={onClose} aria-label="Fermer">
@@ -161,6 +167,115 @@ export function Modal({
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
     </div>
+  );
+}
+
+/** Demande de confirmation dans une fenêtre de l'admin (au lieu du `confirm` du navigateur). */
+export function Confirmation({
+  titre,
+  message,
+  libelleOk = 'Confirmer',
+  danger,
+  onConfirmer,
+  onClose,
+}: {
+  titre: string;
+  message: ReactNode;
+  libelleOk?: string;
+  danger?: boolean;
+  onConfirmer: () => void | Promise<void>;
+  onClose: () => void;
+}) {
+  const [envoi, setEnvoi] = useState(false);
+  const confirmer = async () => {
+    setEnvoi(true);
+    try {
+      await onConfirmer();
+    } finally {
+      setEnvoi(false);
+    }
+    onClose();
+  };
+  return (
+    <Modal
+      title={titre}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn secondary" onClick={onClose}>
+            Annuler
+          </button>
+          <button className={`btn${danger ? ' danger' : ''}`} onClick={confirmer} disabled={envoi}>
+            {envoi ? 'Patientez…' : libelleOk}
+          </button>
+        </>
+      }
+    >
+      <div className="confirmation">
+        <span className={`confirmation-icone${danger ? ' danger' : ''}`}>
+          <Icon name="alert-triangle" size={20} />
+        </span>
+        <p>{message}</p>
+      </div>
+    </Modal>
+  );
+}
+
+/* Confirmations demandées hors d'un composant : `confirmer()` remplace le
+   `confirm()` du navigateur et s'affiche dans la fenêtre ci-dessus. */
+
+interface DemandeConfirmation {
+  question: string;
+  message?: string;
+  libelleOk: string;
+  danger: boolean;
+  repondre: (ok: boolean) => void;
+}
+
+const useConfirmations = create<{ demande: DemandeConfirmation | null }>(() => ({ demande: null }));
+
+/** Verbe d'action en tête de question (« Supprimer la zone… ? » → bouton « Supprimer »). */
+const VERBES_DANGER = /^(Supprimer|Retirer|Suspendre|Désactiver)\b/;
+
+/**
+ * Demande une confirmation dans une fenêtre de l'admin ; résout `true` si
+ * l'utilisateur confirme. Le bouton reprend le verbe de la question et passe
+ * au rouge pour une action destructive.
+ */
+export function confirmer(
+  question: string,
+  options: { message?: string; libelleOk?: string; danger?: boolean } = {}
+): Promise<boolean> {
+  return new Promise((repondre) => {
+    useConfirmations.setState({
+      demande: {
+        question,
+        message: options.message,
+        libelleOk: options.libelleOk ?? (/^\p{Lu}\p{Ll}+er\b/u.exec(question)?.[0] || 'Confirmer'),
+        danger: options.danger ?? VERBES_DANGER.test(question),
+        repondre,
+      },
+    });
+  });
+}
+
+/** Hôte des confirmations, à placer une fois à la racine (à côté des notifications). */
+export function Confirmations() {
+  const demande = useConfirmations((s) => s.demande);
+  if (!demande) return null;
+  const fermer = (ok: boolean) => {
+    useConfirmations.setState({ demande: null });
+    demande.repondre(ok);
+  };
+  return (
+    <Confirmation
+      titre={demande.question}
+      message={demande.message ?? (demande.danger ? 'Cette action est définitive.' : 'Voulez-vous continuer ?')}
+      libelleOk={demande.libelleOk}
+      danger={demande.danger}
+      onConfirmer={() => fermer(true)}
+      onClose={() => useConfirmations.getState().demande && fermer(false)}
+    />
   );
 }
 
@@ -316,13 +431,22 @@ export const toast = {
       .push({ message: e instanceof Error ? e.message : String(e), type: 'error' }),
 };
 
+const ICONES_TOAST: Record<Toast['type'], string> = {
+  success: 'check-circle',
+  error: 'x-circle',
+  info: 'alert-triangle',
+};
+
 export function Toasts() {
   const toasts = useToasts((s) => s.toasts);
   return (
     <div className="toasts">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast ${t.type}`}>
-          {t.message}
+        <div key={t.id} className={`toast ${t.type}`} role={t.type === 'error' ? 'alert' : 'status'}>
+          <Icon name={ICONES_TOAST[t.type]} size={20} className="toast-icone" />
+          <span className="toast-texte">{t.message}</span>
+          {/* Temps restant avant disparition, comme sur l'administration boutique */}
+          <span className="toast-barre" aria-hidden="true" />
         </div>
       ))}
     </div>

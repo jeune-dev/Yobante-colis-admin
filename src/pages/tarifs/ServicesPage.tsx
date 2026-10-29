@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, confirmer } from '@/components/ui';
 import { MODES_TRANSPORT, TYPES_CONTENU, libelle } from '@/lib/labels';
 import { poids } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -112,7 +112,7 @@ export default function ServicesPage() {
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
                   <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
-                    onClick={() => confirm(`Supprimer le service ${s.nom} et toute sa grille tarifaire ?`) && supprimer.mutate(s)}>
+                    onClick={() => confirmer(`Supprimer le service ${s.nom} et toute sa grille tarifaire ?`).then((ok) => ok && supprimer.mutate(s))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

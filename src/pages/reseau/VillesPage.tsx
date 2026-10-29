@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Liste } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput, confirmer } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import { useZonesOptions } from '@/lib/options';
@@ -107,7 +107,7 @@ export default function VillesPage() {
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(v)}>{v.isActive ? 'Désactiver' : 'Activer'}</button>
                   <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
-                    onClick={() => confirm(`Supprimer la ville ${v.nom} ?`) && supprimer.mutate(v)}>
+                    onClick={() => confirmer(`Supprimer la ville ${v.nom} ?`).then((ok) => ok && supprimer.mutate(v))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader, Modal, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Modal, toast, confirmer } from '@/components/ui';
 import { CATEGORIES_COURT, CATEGORIES, DEVISES, TYPES_EMBALLAGE_CATALOGUE, libelle } from '@/lib/labels';
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -100,7 +100,7 @@ export default function EmballagesPage() {
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(e)}><Icon name="pencil" size={14} /></button>
                   <button className="btn ghost sm" title="Photos" aria-label="Photos" onClick={() => setPhotos(e)}><Icon name="image" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(e)}>{e.isActive ? 'Désactiver' : 'Activer'}</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${e.libelle} ?`) && supprimer.mutate(e)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Supprimer ${e.libelle} ?`).then((ok) => ok && supprimer.mutate(e))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

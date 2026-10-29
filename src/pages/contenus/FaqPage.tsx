@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Chips, Empty, ErrorBox, Loader } from '@/components/ui';
+import { Badge, Card, Chips, Empty, ErrorBox, Loader, confirmer } from '@/components/ui';
 import { RUBRIQUES_FAQ, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import ResponsiveTable from '@/components/ResponsiveTable';
@@ -61,7 +61,7 @@ export default function FaqPage() {
                 <div className="actions">
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(x)}><Icon name="pencil" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(x)}>{x.isActive ? 'Masquer' : 'Publier'}</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette question ?') && supprimer.mutate(x)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer('Supprimer cette question ?').then((ok) => ok && supprimer.mutate(x))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

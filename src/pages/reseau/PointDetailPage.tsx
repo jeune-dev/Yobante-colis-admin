@@ -5,7 +5,7 @@ import { api } from '@/api/client';
 import type { Num, PaginationInfo } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, KV, Loader, Modal, Pagination, Stat, StatutBadge, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, KV, Loader, Modal, Pagination, Stat, StatutBadge, toast, confirmer } from '@/components/ui';
 import { JOURS, PAYS, SERVICES_POINT, STATUTS_COLIS, TYPES_POINT, libelle } from '@/lib/labels';
 import { date, nomComplet, poids } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
@@ -98,8 +98,8 @@ export default function PointDetailPage() {
             {p.isActive ? 'Désactiver' : 'Activer'}
           </button>
           <button className="btn danger"
-            onClick={() => confirm('Supprimer définitivement ce point ? Refusé si des colis y sont rattachés.') &&
-              supprimer.mutate(undefined, { onSuccess: () => navigate('/points-collecte') })}>
+            onClick={() => confirmer('Supprimer définitivement ce point ? Refusé si des colis y sont rattachés.').then((ok) =>
+              ok && supprimer.mutate(undefined, { onSuccess: () => navigate('/points-collecte') }))}>
             <Icon name="trash-2" size={15} />
           </button>
         </div>

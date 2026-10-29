@@ -5,7 +5,7 @@ import { api } from '@/api/client';
 import type { Liste, Personne, PointRef } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Chips, Empty, ErrorBox, KV, Loader, Modal, Pagination, StatutBadge, toast } from '@/components/ui';
+import { Badge, Card, Chips, Empty, ErrorBox, KV, Loader, Modal, Pagination, StatutBadge, toast, confirmer } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, STATUTS_COLIS, STATUTS_ENLEVEMENT, STATUTS_TOURNEE, libelle } from '@/lib/labels';
 import { date, dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -97,7 +97,7 @@ export default function TourneesCollectePage() {
                 <div className="actions">
                   <button className="btn secondary sm" onClick={() => setStatut(t)}>Statut</button>
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer la tournée ${t.titre} ?`) && supprimer.mutate(t)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Supprimer la tournée ${t.titre} ?`).then((ok) => ok && supprimer.mutate(t))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader, StatutBadge } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, StatutBadge, confirmer } from '@/components/ui';
 import { EMPLACEMENTS_ANNONCE, NIVEAUX_ANNONCE, libelle } from '@/lib/labels';
 import { dateHeure } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -104,7 +104,7 @@ export default function AnnoncesPage() {
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
                   <button className="btn ghost sm" title="Image" aria-label="Image" onClick={() => setImage(a)}><Icon name="image" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer « ${a.titre} » ?`) && supprimer.mutate(a)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Supprimer « ${a.titre} » ?`).then((ok) => ok && supprimer.mutate(a))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

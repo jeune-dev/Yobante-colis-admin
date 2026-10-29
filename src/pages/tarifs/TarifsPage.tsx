@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Liste, Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, Pagination, toast, confirmer } from '@/components/ui';
 import { DEVISES, OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { date, montant, poids } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -116,7 +116,7 @@ export default function TarifsPage() {
               { cle: 'actions', cellule: (t) => (
                 <div className="actions">
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(t)}><Icon name="pencil" size={14} /></button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette tranche ?') && supprimer.mutate(t)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer('Supprimer cette tranche ?').then((ok) => ok && supprimer.mutate(t))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

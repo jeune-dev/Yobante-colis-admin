@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast, confirmer } from '@/components/ui';
 import { ASSIETTES_SURCHARGE, DEVISES, MODES_SURCHARGE, OPTIONS_PAYS, PAYS, TYPES_SURCHARGE, libelle } from '@/lib/labels';
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -119,7 +119,7 @@ export default function SurchargesPage() {
                 <div className="actions">
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(s)}><Icon name="pencil" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(s)}>{s.isActive ? 'Désactiver' : 'Activer'}</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${s.libelle} ?`) && supprimer.mutate(s)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Supprimer ${s.libelle} ?`).then((ok) => ok && supprimer.mutate(s))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

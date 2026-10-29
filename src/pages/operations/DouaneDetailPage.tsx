@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Card, Empty, ErrorBox, KV, Loader, StatutBadge, toast } from '@/components/ui';
+import { Card, Empty, ErrorBox, KV, Loader, StatutBadge, toast, confirmer } from '@/components/ui';
 import {
   ETATS_MARCHANDISE, INCOTERMS, PAYS, STATUTS_DOUANE, TYPES_CONTENU, TYPES_DOCUMENT_DOUANE, UNITES_DOUANE, libelle,
 } from '@/lib/labels';
@@ -89,7 +89,7 @@ export default function DouaneDetailPage() {
                   { cle: 'droits', titre: 'Droits', cellule: (a) => (a.tauxDroits != null ? `${Number(a.tauxDroits)} %` : '—') },
                   { cle: 'etat', titre: 'État', className: 'small', cellule: (a) => libelle(ETATS_MARCHANDISE, a.etat) },
                   { cle: 'actions', cellule: (a) => (
-                    <button className="btn ghost sm" title="Retirer" aria-label="Retirer" onClick={() => confirm(`Retirer ${a.designation} ?`) && retirer.mutate(a)}>
+                    <button className="btn ghost sm" title="Retirer" aria-label="Retirer" onClick={() => confirmer(`Retirer ${a.designation} ?`).then((ok) => ok && retirer.mutate(a))}>
                       <Icon name="trash-2" size={14} />
                     </button>
                   ) },

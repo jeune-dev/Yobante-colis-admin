@@ -11,7 +11,7 @@ import { ROLES } from '@/lib/labels';
 import { initiales, nomComplet } from '@/lib/format';
 import { MOBILE, useMediaQuery } from '@/lib/hooks';
 
-type Page = { to: string; label: string; icon: string; sub: string };
+type Page = { to: string; label: string; icon: string; sub: string; section?: string };
 type Entree = { section: string } | Page;
 
 const NAV: Entree[] = [
@@ -64,21 +64,46 @@ const AUTRES: Page[] = [
   { to: '/notifications', label: 'Notifications', icon: 'inbox', sub: 'Alertes du back-office' },
 ];
 
-const PAGES = [...NAV.filter((e): e is Page => 'to' in e), ...AUTRES];
+// Chaque page retient sa section, pour le fil d'Ariane du bandeau (« Opérations › Colis »)
+const PAGES: Page[] = [
+  ...NAV.reduce<{ section?: string; pages: Page[] }>(
+    (acc, e) => ('section' in e ? { ...acc, section: e.section } : { ...acc, pages: [...acc.pages, { ...e, section: acc.section }] }),
+    { pages: [] }
+  ).pages,
+  ...AUTRES,
+];
 
 export default function Layout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { utilisateur, refreshToken, clear } = useAuth();
   const [ouvert, setOuvert] = useState(false);
+  const [compte, setCompte] = useState(false);
+  const zoneCompte = useRef<HTMLDivElement>(null);
   // Le tiroir n'existe que sur mobile : au-delà, le menu est toujours affiché
   const mobile = useMediaQuery(MOBILE);
   const tiroir = ouvert && mobile;
   const burger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLElement>(null);
 
-  // Fermé à chaque changement de page (lien, retour arrière, redirection)
-  useEffect(() => setOuvert(false), [pathname]);
+  // Fermés à chaque changement de page (lien, retour arrière, redirection)
+  useEffect(() => {
+    setOuvert(false);
+    setCompte(false);
+  }, [pathname]);
+
+  // Menu du compte : un clic ailleurs ou Échap le referme
+  useEffect(() => {
+    if (!compte) return;
+    const clic = (e: MouseEvent) => !zoneCompte.current?.contains(e.target as Node) && setCompte(false);
+    const echap = (e: KeyboardEvent) => e.key === 'Escape' && setCompte(false);
+    document.addEventListener('mousedown', clic);
+    document.addEventListener('keydown', echap);
+    return () => {
+      document.removeEventListener('mousedown', clic);
+      document.removeEventListener('keydown', echap);
+    };
+  }, [compte]);
 
   // Tiroir ouvert : Échap le ferme, la page derrière ne défile plus, le focus
   // entre dans le menu puis revient au bouton à la fermeture
@@ -116,13 +141,15 @@ export default function Layout() {
     <div className="app">
       {tiroir && <div className="sb-voile" onClick={() => setOuvert(false)} />}
       <aside id="menu-principal" ref={menu} className={`sb${tiroir ? ' open' : ''}`} aria-label="Menu principal">
-        <div className="sb-top">
-          <img className="sb-logo" src={logo} alt="Yobante" />
+        <Link to="/" className="sb-top" title="Yobante Colis" onClick={() => setOuvert(false)}>
+          <img className="sb-logo" src={logo} alt="Yobante Colis" />
           <div>
-            <div className="sb-name">Yobante Colis</div>
-            <div className="sb-sub">Administration France ⇄ Sénégal</div>
+            <div className="sb-name">
+              Yobante <span>Colis</span>
+            </div>
+            <div className="sb-sub">Administration</div>
           </div>
-        </div>
+        </Link>
         <nav className="nav">
           {NAV.map((e, i) =>
             'section' in e ? (
@@ -144,21 +171,6 @@ export default function Layout() {
             )
           )}
         </nav>
-        <div className="sb-foot">
-          <div className="user-pill">
-            <Link to="/profil" className="ava" title="Mon profil" onClick={() => setOuvert(false)}>
-              {/* Photo de profil si elle existe, sinon les initiales */}
-              {utilisateur?.avatarUrl ? <img src={utilisateur.avatarUrl} alt="" /> : initiales(utilisateur)}
-            </Link>
-            <Link to="/profil" className="user-info" style={{ color: 'inherit' }} onClick={() => setOuvert(false)}>
-              <div className="user-name">{nomComplet(utilisateur)}</div>
-              <div className="user-role">{ROLES[utilisateur?.role ?? ''] ?? utilisateur?.role}</div>
-            </Link>
-            <button className="btn ghost sm" onClick={deconnexion} title="Déconnexion">
-              <Icon name="log-out" size={16} />
-            </button>
-          </div>
-        </div>
       </aside>
 
       {/* Tiroir ouvert : le reste de la page est inerte (focus piégé dans le menu) */}
@@ -166,14 +178,66 @@ export default function Layout() {
         <header className="topbar">
           <button ref={burger} className="btn ghost sm burger" onClick={() => setOuvert((o) => !o)} aria-label="Menu"
             aria-expanded={tiroir} aria-controls="menu-principal">
-            <Icon name="grid" size={18} />
+            <Icon name="menu" size={20} />
           </button>
-          <div>
-            <div className="page-title">{page.label}</div>
-            <div className="page-sub">{page.sub}</div>
-          </div>
+          <nav className="ariane" aria-label="Fil d'Ariane">
+            <ol>
+              {page.section && (
+                <>
+                  <li className="ariane-groupe">{page.section}</li>
+                  <li className="ariane-groupe ariane-sep" aria-hidden="true">
+                    <Icon name="chevron-right" size={14} />
+                  </li>
+                </>
+              )}
+              <li className="page-title" aria-current="page" title={page.sub}>
+                {page.label}
+              </li>
+            </ol>
+          </nav>
           <div className="topbar-right">
             <NotificationsBell />
+            <div className="compte" ref={zoneCompte}>
+              <button
+                className={`compte-btn${compte ? ' ouvert' : ''}`}
+                onClick={() => setCompte((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={compte}
+                title="Mon compte"
+              >
+                <span className="ava">
+                  {/* Photo de profil si elle existe, sinon les initiales */}
+                  {utilisateur?.avatarUrl ? <img src={utilisateur.avatarUrl} alt="" /> : initiales(utilisateur)}
+                </span>
+                <span className="user-info">
+                  <span className="user-name">{nomComplet(utilisateur)}</span>
+                  <span className="user-role">{ROLES[utilisateur?.role ?? ''] ?? utilisateur?.role}</span>
+                </span>
+                <Icon name="chevron-right" size={14} className="compte-chevron" />
+              </button>
+              {compte && (
+                <div className="compte-menu" role="menu">
+                  {/* Le nom est répété ici : sur petit écran il est masqué dans le bouton */}
+                  <div className="compte-entete">
+                    <span className="ava">
+                      {utilisateur?.avatarUrl ? <img src={utilisateur.avatarUrl} alt="" /> : initiales(utilisateur)}
+                    </span>
+                    <span className="user-info">
+                      <span className="user-name">{nomComplet(utilisateur)}</span>
+                      <span className="user-role">{utilisateur?.email}</span>
+                    </span>
+                  </div>
+                  <Link to="/profil" role="menuitem" className="compte-item">
+                    <Icon name="user" size={16} />
+                    Mon profil
+                  </Link>
+                  <button role="menuitem" className="compte-item danger" onClick={deconnexion}>
+                    <Icon name="log-out" size={16} />
+                    Déconnexion
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <div className="content">

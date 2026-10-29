@@ -5,7 +5,7 @@ import { api } from '@/api/client';
 import type { Liste, Personne } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal } from '@/components/FormModal';
-import { Card, Chips, Empty, ErrorBox, Loader, Pagination, StatutBadge } from '@/components/ui';
+import { Card, Chips, Empty, ErrorBox, Loader, Pagination, StatutBadge, confirmer } from '@/components/ui';
 import { STATUTS_AVIS } from '@/lib/labels';
 import { dateHeure, nomComplet } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -91,7 +91,7 @@ export default function AvisPage() {
               { cle: 'actions', cellule: (a) => (
                 <div className="actions">
                   <button className="btn secondary sm" onClick={() => setModeration(a)}>Modérer</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer définitivement cet avis ?') && supprimer.mutate(a)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer('Supprimer définitivement cet avis ?').then((ok) => ok && supprimer.mutate(a))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

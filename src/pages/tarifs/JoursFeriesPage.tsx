@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Field, Loader, Modal, toast, confirmer } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import ResponsiveTable from '@/components/ResponsiveTable';
@@ -61,7 +61,7 @@ export default function JoursFeriesPage() {
               { cle: 'actions', cellule: (j) => (
                 <div className="actions">
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(j)}><Icon name="pencil" size={14} /></button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Supprimer ${j.libelle} ?`) && supprimer.mutate(j)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Supprimer ${j.libelle} ?`).then((ok) => ok && supprimer.mutate(j))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

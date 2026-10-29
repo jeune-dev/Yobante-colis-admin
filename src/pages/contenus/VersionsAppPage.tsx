@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, confirmer } from '@/components/ui';
 import { PLATEFORMES, libelle } from '@/lib/labels';
 import { dateHeure } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
@@ -73,7 +73,7 @@ export default function VersionsAppPage() {
               { cle: 'actions', cellule: (v) => (
                 <div className="actions">
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(v)}><Icon name="pencil" size={14} /></button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm('Supprimer cette configuration ?') && supprimer.mutate(v)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer('Supprimer cette configuration ?').then((ok) => ok && supprimer.mutate(v))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

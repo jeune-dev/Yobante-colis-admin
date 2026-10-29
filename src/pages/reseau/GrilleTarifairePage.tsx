@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, confirmer } from '@/components/ui';
 import { CATEGORIES, DEVISES, MODES_TRANSPORT, OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { montant } from '@/lib/format';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
@@ -118,7 +118,7 @@ export default function GrilleTarifairePage() {
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(a)}><Icon name="pencil" size={14} /></button>
                   <button className="btn ghost sm" title="Photo" aria-label="Photo" onClick={() => setPhoto(a)}><Icon name="image" size={14} /></button>
                   <button className="btn secondary sm" onClick={() => toggle.mutate(a)}>{a.isActive ? 'Désactiver' : 'Activer'}</button>
-                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirm(`Retirer ${a.libelle} de la grille ?`) && supprimer.mutate(a)}>
+                  <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer" onClick={() => confirmer(`Retirer ${a.libelle} de la grille ?`).then((ok) => ok && supprimer.mutate(a))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

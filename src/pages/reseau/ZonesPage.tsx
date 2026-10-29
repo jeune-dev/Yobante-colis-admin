@@ -4,7 +4,7 @@ import { api } from '@/api/client';
 import type { Liste, Num } from '@/api/types';
 import Icon from '@/components/Icon';
 import { FormModal, type ChampDef } from '@/components/FormModal';
-import { Badge, Card, Empty, ErrorBox, Loader, Modal, Pagination, SearchInput, toast } from '@/components/ui';
+import { Badge, Card, Empty, ErrorBox, Loader, Modal, Pagination, SearchInput, toast, confirmer } from '@/components/ui';
 import { OPTIONS_PAYS, PAYS, libelle } from '@/lib/labels';
 import { useAction, useFiltres, useInvalider } from '@/lib/hooks';
 import ResponsiveTable from '@/components/ResponsiveTable';
@@ -83,7 +83,7 @@ export default function ZonesPage() {
                   <button className="btn secondary sm" onClick={() => setVilles(z)}>Villes</button>
                   <button className="btn ghost sm" title="Modifier" aria-label="Modifier" onClick={() => setEdition(z)}><Icon name="pencil" size={14} /></button>
                   <button className="btn ghost sm" title="Supprimer" aria-label="Supprimer"
-                    onClick={() => confirm(`Supprimer la zone ${z.nom} ?`) && supprimer.mutate(z)}>
+                    onClick={() => confirmer(`Supprimer la zone ${z.nom} ?`).then((ok) => ok && supprimer.mutate(z))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 </div>

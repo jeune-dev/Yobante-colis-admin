@@ -6,9 +6,7 @@ import ParametresPage from './pages/systeme/ParametresPage';
 import Layout from './components/Layout';
 import { Toasts } from './components/ui';
 import { useAuth } from './auth/store';
-import '@fontsource/dm-sans/400.css';
-import '@fontsource/dm-sans/600.css';
-import '@fontsource/dm-sans/700.css';
+import '@fontsource-variable/inter';
 import './styles.css';
 
 const session = { accessToken: 'x', utilisateur: { id: '1', nom: 'Admin', prenom: 'Super', email: 'a@a', role: 'super_admin' } } as const;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Facture, Liste } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast } from '@/components/ui';
+import { Card, Chips, Empty, ErrorBox, Loader, Pagination, SearchInput, Stat, StatutBadge, toast, confirmer } from '@/components/ui';
 import { TYPES_FACTURE } from '@/lib/labels';
 
 interface StatsFactures {
@@ -79,8 +79,8 @@ export default function FacturesPage() {
         <div className="actions pousser">
           <button className="btn secondary" onClick={exporter}><Icon name="download" size={15} /> Export CSV</button>
           <button className="btn secondary" disabled={relances.isPending}
-            onClick={() => confirm('Relancer tous les clients dont la facture est échue ?') &&
-              relances.mutate(undefined, { onSuccess: (r) => toast.success(`${r.nbRelances} relance(s) envoyée(s)`) })}>
+            onClick={() => confirmer('Relancer tous les clients dont la facture est échue ?').then((ok) =>
+              ok && relances.mutate(undefined, { onSuccess: (r) => toast.success(`${r.nbRelances} relance(s) envoyée(s)`) }))}>
             <Icon name="mail" size={15} /> Relancer les échues
           </button>
         </div>

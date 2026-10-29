@@ -3,7 +3,7 @@ import { api } from '@/api/client';
 import type { Liste, Personne } from '@/api/types';
 import { Badge, Card, Empty, ErrorBox, Loader, Pagination, SearchInput } from '@/components/ui';
 import { ENTITES_JOURNAL, ROLES, libelle, libelleAction } from '@/lib/labels';
-import { dateHeure, nomComplet } from '@/lib/format';
+import { dateHeure, montant, nomComplet } from '@/lib/format';
 import { useFiltres } from '@/lib/hooks';
 import ResponsiveTable from '@/components/ResponsiveTable';
 
@@ -18,11 +18,52 @@ interface Activite {
   User?: Personne;
 }
 
-const resume = (d: Record<string, unknown>) =>
-  Object.entries(d)
-    .filter(([, v]) => v !== null && v !== undefined && v !== '' && typeof v !== 'object')
-    .map(([k, v]) => `${k} : ${typeof v === 'boolean' ? (v ? 'oui' : 'non') : v}`)
-    .join(' · ') || '—';
+/** Libellés lisibles des clés techniques du journal. */
+const CLES: Record<string, string> = {
+  montant: 'Montant',
+  montantTotal: 'Montant',
+  categorie: 'Catégorie',
+  reference: 'Référence',
+  statut: 'Statut',
+  motif: 'Motif',
+  email: 'Email',
+  role: 'Rôle',
+  ancienStatut: 'Ancien statut',
+  nouveauStatut: 'Nouveau statut',
+};
+
+/** « codePostal » → « Code postal », pour les clés sans libellé. */
+const humaniser = (cle: string) => {
+  const mots = cle.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  return mots.charAt(0).toUpperCase() + mots.slice(1);
+};
+
+/** Détails d'une action en pastilles « Libellé valeur », montants formatés dans leur devise. */
+function Details({ d }: { d: Record<string, unknown> }) {
+  const devise = typeof d.devise === 'string' ? d.devise : undefined;
+  const lignes = Object.entries(d)
+    .filter(([k, v]) => v !== null && v !== undefined && v !== '' && typeof v !== 'object' && !(k === 'devise' && devise))
+    .map(([k, v]) => {
+      const valeur =
+        typeof v === 'boolean'
+          ? v ? 'oui' : 'non'
+          : /^montant/i.test(k) && devise
+            ? montant(v as number | string, devise)
+            : String(v).replace(/_/g, ' ');
+      return [CLES[k] ?? humaniser(k), valeur] as const;
+    });
+  if (!lignes.length) return <span className="muted">—</span>;
+  return (
+    <span className="journal-details">
+      {lignes.map(([cle, valeur]) => (
+        <span key={cle} className="journal-detail">
+          <span>{cle}</span>
+          {valeur}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export default function JournalPage() {
   const { filtres, page, set, setPage } = useFiltres({ action: '', entite: '', dateDebut: '', dateFin: '' });
@@ -62,7 +103,7 @@ export default function JournalPage() {
               </> },
               { cle: 'action', titre: 'Action', mobile: 'titre', cellule: (a) => <span title={a.action}>{libelleAction(a.action)}</span> },
               { cle: 'objet', titre: 'Objet', className: 'small', cellule: (a) => (a.entite ? (ENTITES_JOURNAL[a.entite] ?? a.entite) : '—') },
-              { cle: 'details', titre: 'Détails', className: 'small muted texte-limite', cellule: (a) => (a.details && Object.keys(a.details).length ? resume(a.details) : '—') },
+              { cle: 'details', titre: 'Détails', cellule: (a) => (a.details ? <Details d={a.details} /> : <span className="muted">—</span>) },
             ]}
           />
         )}

@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '@/api/client';
 import type { Colis, Rotation } from '@/api/types';
 import Icon from '@/components/Icon';
-import { Card, Empty, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast } from '@/components/ui';
+import { Card, Empty, ErrorBox, Field, KV, Loader, Modal, StatutBadge, toast, confirmer } from '@/components/ui';
 import { MODES_TRANSPORT, PAYS, STATUTS_COLIS, STATUTS_ROTATION, STATUTS_ROTATION_CIBLES, libelle } from '@/lib/labels';
 import { date, ouvrirDocument, poids } from '@/lib/format';
 import { useAction, useInvalider } from '@/lib/hooks';
@@ -86,7 +86,7 @@ export default function ConteneurDetailPage() {
                 { cle: 'statut', titre: 'Statut', cellule: (c) => <StatutBadge table={STATUTS_COLIS} valeur={c.statut} /> },
                 { cle: 'actions', cellule: (c) => r.estOuverteAuChargement && (
                   <button className="btn ghost sm" title="Retirer du conteneur" aria-label="Retirer du conteneur"
-                    onClick={() => confirm(`Retirer ${c.reference} du conteneur ?`) && decharger.mutate([c.id])}>
+                    onClick={() => confirmer(`Retirer ${c.reference} du conteneur ?`).then((ok) => ok && decharger.mutate([c.id]))}>
                     <Icon name="trash-2" size={14} />
                   </button>
                 ) },
